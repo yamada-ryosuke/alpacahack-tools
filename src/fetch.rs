@@ -26,37 +26,54 @@ pub fn fetch_challenge_data(challenge_url: &Url) -> Result<ChallengeInfo> {
     }
 }
 
-///
+/// 問題ページから問題のメタデータを取得する。
 fn fetch_challenge_meta(challenge_url: &Url) -> Result<(ChallengeMeta, Option<Url>)> {
     // challenge_urlからデータを取得してパースする
     let document = reqwest::blocking::get(challenge_url.as_str())?.text()?;
     let document = scraper::Html::parse_document(&document);
 
-    // // セレクタを作成する
-    // let name_with_space_selector = scraper::Selector::parse(
-    //     "body > div.MuiBox-root.css-17uaq2i > div > main > div:nth-child(2) > h1",
-    // )
-    // .unwrap();
-    let file_url_selector = scraper::Selector::parse("body > div.MuiBox-root.css-17uaq2i > div > main > div.MuiBox-root.css-79elbk > article > div.MuiStack-root.css-1821gv5 > div > a").unwrap();
+    // セレクタを作成する
+    // おそらく動的生成のため、セレクタが崩れやすい。
+    // そのため、`main > div > h1`程度のアバウトなセレクタを使う。
+    let name_with_space_selector = scraper::Selector::parse("main > div > h1").unwrap();
+    let file_url_selector =
+        scraper::Selector::parse("main > div > article > div > div > a").unwrap();
+    // 日付の上のp要素のセレクタ
+    let release_selector = scraper::Selector::parse("main > div > p").unwrap();
 
-    // // データを取得する
-    // let name_with_space = document
-    //     .select(&name_with_space_selector)
-    //     .next()
-    //     .unwrap()
-    //     .inner_html();
+    // データを取得する
+    let name_with_space = document
+        .select(&name_with_space_selector)
+        .next()
+        .unwrap()
+        .inner_html();
     let file_url = document
         .select(&file_url_selector)
         .next()
-        .and_then(|elem|elem.attr("href"))
+        .and_then(|elem| elem.attr("href"))
         .map(|s| Url::parse(s).unwrap());
 
+    let date = document
+        .select(&release_selector)
+        .next()
+        .unwrap()
+        .last_child()
+        .unwrap()
+        .value()
+        .as_text()
+        .unwrap()
+        .to_string();
+
     let name_with_kebab = get_name_with_kebab(challenge_url)?;
-    Ok((ChallengeMeta {
-        url: challenge_url.clone(),
-        // name_with_space: "".to_string(),
-        name_with_kebab,
-    }, file_url))
+    Ok((
+        ChallengeMeta {
+            url: challenge_url.clone(),
+            date,
+            name_with_space,
+            name_with_kebab,
+        },
+        file_url,
+    ))
 }
 
 /// ファイルをダウンロードする。

@@ -45,11 +45,11 @@ fn setup_challenge_project(challenge_url: &Url, alpacahack_directory: &Path) -> 
     // 問題情報を取得する。
     let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
     println!("問題情報を取得しました");
-    // println!("{:?}", challenge_info);
+    println!("問題名: {}", challenge_info.meta.name_with_space);
 
     // 問題プロジェクトを作成する。
     let challenge_dir = project::create_project(alpacahack_directory, challenge_info)?;
-    println!("問題プロジェクトを作成しました。");
+    println!("問題プロジェクトの作成が完了しました。");
 
     Ok(challenge_dir)
 }
