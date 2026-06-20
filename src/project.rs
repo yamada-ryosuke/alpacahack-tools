@@ -45,26 +45,28 @@ pub(crate) fn create_project(
 }
 
 /// 問題プロジェクトのディレクトリを作成する。
-fn create_directory(alpacahack_dir: &Path, downloaded_filename: &str) -> Result<PathBuf> {
-    // ファイル名の末尾の.tar.gzを削除したものをディレクトリ名とする。
-    let dirname = downloaded_filename.to_string().replace(".tar.gz", "");
-    let dir_path = alpacahack_dir.join(dirname);
+fn create_directory(alpacahack_dir: &Path, challenge_title: &str) -> Result<PathBuf> {
+    let dir_path = alpacahack_dir.join(challenge_title);
+    // 既に同名のディレクトリが存在していないことを確認する。
+    if dir_path.exists() {
+        return Err(anyhow::anyhow!("`{}`のディレクトリは既に存在しています。", challenge_title));
+    }
     fs::create_dir_all(&dir_path)?;
 
     Ok(dir_path)
 }
 
 /// ディレクトリの中にダウンロードしたファイルを展開する。
-fn expand_file(problem_dir: &Path, downloaded_file: ChallengeData) -> Result<()> {
+fn expand_file(challenge_dir: &Path, downloaded_file: ChallengeData) -> Result<()> {
     // ダウンロードしたファイルを保存する。
-    let downloaded_file_path = problem_dir.join(&downloaded_file.name);
+    let downloaded_file_path = challenge_dir.join(&downloaded_file.name);
     File::create(&downloaded_file_path)?.write_all(&downloaded_file.data)?;
     // ダウンロードしたファイルがtar.gzの場合、解凍する。
     if downloaded_file.name.ends_with(".tar.gz") {
         let tar_gz = File::open(&downloaded_file_path)?;
         let tar = flate2::read::GzDecoder::new(tar_gz);
         let mut archive = tar::Archive::new(tar);
-        archive.unpack(problem_dir)?;
+        archive.unpack(challenge_dir)?;
         // ダウンロードしたファイルを削除する。
         fs::remove_file(&downloaded_file_path)?;
     }
