@@ -1,5 +1,8 @@
+/// 問題ページから問題の情報を取得する機能のモジュール
 mod fetch;
+/// 問題の情報を持つための構造体
 mod problem_info;
+/// 問題プロジェクトを作成する機能のモジュール
 mod project;
 
 use std::{
@@ -11,8 +14,6 @@ use std::{
 use anyhow::{Context, Result};
 use reqwest::Url;
 
-use crate::fetch::fetch_problem_data;
-
 #[tokio::main]
 async fn main() -> Result<()> {
     // ファイルのダウンロードURLを入力してもらう。
@@ -20,44 +21,37 @@ async fn main() -> Result<()> {
     // AlpacaHackのディレクトリ名を取得する。
     let alpacahack_directory = get_alpacahack_directory()?;
 
-    run(&file_url, &alpacahack_directory).await?;
-    Ok(())
-}
-
-/// 指定した URL からファイルを非同期にダウンロードし、作業ディレクトリに展開して VS Code で開くユーティリティ関数。
-///
-/// # 引数
-/// - `file_url`: ダウンロード対象のファイルを指す `Url`。
-/// - `alpacahack_directory`: (未使用の場合は内部で決定される) ベースとなる作業ディレクトリの `Path`。
-///
-/// # 動作
-/// 1. `file_url` からデータを非同期で取得する（`download` を呼ぶ）。
-/// 2. URL からファイル名を抽出し、`alpacahack` 配下に問題用ディレクトリを作成する。
-/// 3. ダウンロードしたデータを展開し、`memo.md` を作成する。
-/// 4. `code` コマンドで作成したディレクトリを開く。
-///
-/// # エラー
-/// 処理の各段階で失敗すると `Result::Err` を返す（各箇所でコンテキスト付きのエラーメッセージを追加）。
-///
-/// # Example
-/// ```
-/// run(
-///     Url::parse("https://alpacahack-prod.s3.ap-northeast-1.amazonaws.com/0a2e166c-fe68-4617-83d2-1ff98a4e5812/a-fact-of-CTF.tar.gz")?,
-///     home_dir.join("competitions").join("ctf").join("alpacahack")
-/// )
-/// ```
-async fn run(file_url: &Url, alpacahack_directory: &Path) -> Result<()> {
-    // 問題をダウンロードする。
-    let problem_info = fetch_problem_data(file_url).await?;
-
-    // 問題プロジェクトを作成する。
-    let problem_dir = project::create_project(alpacahack_directory, problem_info)?;
+    let problem_dir = setup_problem_project(&file_url, &alpacahack_directory).await?;
 
     // VSCodeでディレクトリを開く。
     open_vscode(&problem_dir).context("VSCodeでディレクトリを開けませんでした。")?;
     println!("VSCodeでディレクトリを開きました。");
 
     Ok(())
+}
+
+/// 指定した URL から問題データを取得し、作業ディレクトリに問題プロジェクトを作成する。
+///
+/// # 引数
+/// - `file_url`: ダウンロード対象のファイルを指す `Url`。
+/// - `alpacahack_directory`: ベースとなる作業ディレクトリの `Path`。
+///
+/// # 動作
+/// 1. `file_url` から問題データを非同期で取得する（`fetch::fetch_problem_data` を呼ぶ）。
+/// 2. 取得した問題情報をもとに、`alpacahack` 配下に問題用プロジェクトを作成する。
+///
+/// # 返り値
+/// 作成した問題プロジェクトのディレクトリパス。
+async fn setup_problem_project(file_url: &Url, alpacahack_directory: &Path) -> Result<PathBuf> {
+    // 問題情報を取得する。
+    let problem_info = fetch::fetch_problem_data(file_url).await?;
+    println!("問題情報を取得しました");
+
+    // 問題プロジェクトを作成する。
+    let problem_dir = project::create_project(alpacahack_directory, problem_info)?;
+    println!("問題プロジェクトを作成しました。");
+
+    Ok(problem_dir)
 }
 
 /// URLを入力してもらう。
@@ -73,7 +67,8 @@ fn input_url() -> Result<Url> {
         .read_line(&mut url)
         .context("URLの入力に失敗しました")
         .unwrap();
-    validate_domain(url.trim())
+    let url = validate_domain(url.trim());
+    url
 }
 
 /// URLがalpacahack-prod.s3.ap-northeast-1.amazonaws.comのものであることを確認する。
@@ -125,7 +120,7 @@ mod daily_alpacahack_test {
 
         let dir = tempdir().unwrap();
 
-        run(&file_url, dir.path()).await.unwrap();
+        setup_problem_project(&file_url, dir.path()).await.unwrap();
 
         let expected = [
             "emojify/emojify/backend",

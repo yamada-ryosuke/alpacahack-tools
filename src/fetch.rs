@@ -17,12 +17,12 @@ pub async fn fetch_problem_data(file_url: &Url) -> Result<ChallengeInfo> {
 }
 
 /// ファイルをダウンロードする。
-pub async fn download(url: &Url) -> Result<bytes::Bytes> {
+async fn download(url: &Url) -> Result<bytes::Bytes> {
     Ok(reqwest::get(url.as_str()).await?.bytes().await?)
 }
 
 /// URLからファイル名を取得する。
-pub fn get_filename(url: &Url) -> Result<String> {
+fn get_filename(url: &Url) -> Result<String> {
     let filename = url
         .path_segments()
         .ok_or(anyhow::anyhow!("URLのパスがありません。"))?
