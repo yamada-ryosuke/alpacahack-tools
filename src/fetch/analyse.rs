@@ -17,8 +17,8 @@ pub fn analyze_document(
         ChallengeMeta {
             url: challenge_url.clone(),
             released_at: get_date(&document)?,
-            title_with_space: get_name_with_space(&document)?,
-            title_with_kebab: get_name_with_kebab(challenge_url)?,
+            title: get_name_with_space(&document)?,
+            project_name: get_name_with_kebab(challenge_url)?,
         },
         get_file_url(&document)?,
     ))

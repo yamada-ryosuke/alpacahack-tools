@@ -6,10 +6,13 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.102"
 bytes = "1.11.1"
-chrono = "0.4.45"
+chrono = { version = "0.4.45", features = ["serde"] }
 dirs = "6.0.0"
 flate2 = "1.1.9"
 reqwest = { version = "0.13.4", features = ["blocking"] }
 scraper = "0.27.0"
+serde = { version = "1.0.228", features = ["derive"] }
 tar = "0.4.46"
 tempfile = "3.27.0"
+toml = "1.1.2"
+url = { version = "2.5.8", features = ["serde"] }

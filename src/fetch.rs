@@ -20,7 +20,7 @@ pub fn fetch_challenge_data(challenge_url: &Url) -> Result<ChallengeInfo> {
             Ok(ChallengeInfo {
                 meta: metadata,
                 attached: Some(ChallengeFile {
-                    url: file_url,
+                    _url: file_url,
                     name: filename,
                     data: file_data,
                 }),
