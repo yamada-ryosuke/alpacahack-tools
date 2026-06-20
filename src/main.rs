@@ -45,7 +45,7 @@ fn setup_challenge_project(challenge_url: &Url, alpacahack_directory: &Path) -> 
     // 問題情報を取得する。
     let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
     println!("問題情報を取得しました");
-    println!("問題名: {}", challenge_info.meta.name_with_space);
+    println!("問題タイトル: {}", challenge_info.meta.title_with_space);
 
     // 問題プロジェクトを作成する。
     let challenge_dir = project::create_project(alpacahack_directory, challenge_info)?;
@@ -111,7 +111,7 @@ mod daily_alpacahack_test {
         assert!(root.join(rel).exists(), "{} does not exist", rel)
     }
 
-    /// 問題名とファイル名が一致しているパターン
+    /// 問題タイトルとファイル名が一致しているパターン
     #[test]
     fn test_emojify_matching() {
         let challenge_url = Url::parse("https://alpacahack.com/daily/challenges/emojify").unwrap();
@@ -124,9 +124,9 @@ mod daily_alpacahack_test {
         // プロジェクトディレクトリがある
         assert_exists(&dir.path(), "emojify");
 
-        // プロジェクトディレクトリの中にmemo.mdとダウンロードしたディレクトリがある。
+        // プロジェクトディレクトリの中にnote.mdとダウンロードしたディレクトリがある。
         let project_dir = dir.path().join("emojify");
-        assert_exists(&project_dir, "memo.md");
+        assert_exists(&project_dir, "note.md");
         assert_exists(&project_dir, "emojify");
 
         // ダウンロードしたファイルの中身がある
@@ -153,7 +153,7 @@ mod daily_alpacahack_test {
         }
     }
 
-    /// 問題名とファイル名が一致していないパターン
+    /// 問題タイトルとファイル名が一致していないパターン
     #[test]
     fn test_a_fact_of_ctf_mismatch() {
         let challenge_url =
@@ -167,9 +167,9 @@ mod daily_alpacahack_test {
         // プロジェクトディレクトリがある
         assert_exists(&dir.path(), "a-fact-of-ctf");
 
-        // プロジェクトディレクトリの中にmemo.mdとダウンロードしたディレクトリがある。
+        // プロジェクトディレクトリの中にnote.mdとダウンロードしたディレクトリがある。
         let project_dir = dir.path().join("a-fact-of-ctf");
-        assert_exists(&project_dir, "memo.md");
+        assert_exists(&project_dir, "note.md");
         assert_exists(&project_dir, "a-fact-of-CTF");
 
         // ダウンロードしたファイルの中身がある
@@ -194,9 +194,9 @@ mod daily_alpacahack_test {
         // プロジェクトディレクトリがある
         assert_exists(&dir.path(), "read-assembly");
 
-        // プロジェクトディレクトリの中にmemo.mdとダウンロードしたディレクトリがある。
+        // プロジェクトディレクトリの中にnote.mdとダウンロードしたディレクトリがある。
         let project_dir = dir.path().join("read-assembly");
-        assert_exists(&project_dir, "memo.md");
+        assert_exists(&project_dir, "note.md");
         assert_exists(&project_dir, "asm.txt");
     }
 
@@ -213,8 +213,8 @@ mod daily_alpacahack_test {
         // プロジェクトディレクトリがある
         assert_exists(&dir.path(), "alpacahack-2100");
 
-        // プロジェクトディレクトリの中にmemo.mdがある。
+        // プロジェクトディレクトリの中にnote.mdがある。
         let project_dir = dir.path().join("alpacahack-2100");
-        assert_exists(&project_dir, "memo.md");
+        assert_exists(&project_dir, "note.md");
     }
 }

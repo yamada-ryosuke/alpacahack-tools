@@ -16,8 +16,8 @@ pub fn analyze_document(
         ChallengeMeta {
             url: challenge_url.clone(),
             date: get_date(&document)?,
-            name_with_space: get_name_with_space(&document)?,
-            name_with_kebab: get_name_with_kebab(challenge_url)?,
+            title_with_space: get_name_with_space(&document)?,
+            title_with_kebab: get_name_with_kebab(challenge_url)?,
         },
         get_file_url(&document)?,
     ))
@@ -27,13 +27,13 @@ pub fn analyze_document(
 fn get_name_with_space(document: &Html) -> Result<String> {
     // 親要素のセレクタを作成する。
     let name_with_space_selector = scraper::Selector::parse("main > div > h1")
-        .map_err(|_| anyhow::anyhow!("問題名のセレクタの作成に失敗しました"))?;
+        .map_err(|_| anyhow::anyhow!("問題タイトルのセレクタの作成に失敗しました"))?;
 
     // 親要素を取得する
     let parent = document
         .select(&name_with_space_selector)
         .next()
-        .ok_or(anyhow::anyhow!("問題名のh1要素を取得できませんでした。"))?;
+        .ok_or(anyhow::anyhow!("問題タイトルのh1要素を取得できませんでした。"))?;
     // 名前を取得する
     Ok(parent.inner_html())
 }
@@ -80,7 +80,7 @@ fn get_date(document: &Html) -> Result<String> {
         .to_string())
 }
 
-/// URLからkebab-caseの問題名を取得する。
+/// URLからkebab-caseの問題タイトルを取得する。
 fn get_name_with_kebab(challenge_url: &Url) -> Result<String> {
     let challenge_name = challenge_url
         .path_segments()

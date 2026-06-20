@@ -28,7 +28,7 @@ pub struct ChallengeMeta {
     /// 問題が出された日付
     pub date: String,
     /// スペースを含む(おそらく正式な)問題の名前
-    pub name_with_space: String,
+    pub title_with_space: String,
     /// URLやディレクトリ名に使われるkebab-caseの問題の名前
-    pub name_with_kebab: String,
+    pub title_with_kebab: String,
 }

@@ -23,22 +23,23 @@ pub(crate) fn create_project(
     alpacahack_dir: &Path,
     challenge_info: ChallengeInfo,
 ) -> Result<PathBuf> {
-    let challenge_dir = create_directory(alpacahack_dir, &challenge_info.meta.name_with_kebab)
+    // 問題ディレクトリを作成する。
+    let challenge_dir = create_directory(alpacahack_dir, &challenge_info.meta.title_with_kebab)
         .context("問題ディレクトリの作成に失敗しました。")?;
     println!(
         "問題ディレクトリを作成しました: {}",
         challenge_dir.display()
     );
 
+    // 問題に添付されているファイルを展開する。
     if let Some(data) = challenge_info.data {
         expand_file(&challenge_dir, data).context("ファイルの展開に失敗しました。")?;
         println!("ファイルの展開が完了しました。");
     }
 
-    // 問題ディレクトリにmemo.mdを作成する。
-    let memo_path = challenge_dir.join("memo.md");
-    File::create(&memo_path).context("memo.mdの作成に失敗しました。")?;
-    println!("memo.mdを作成しました: {}", memo_path.display());
+    // note.mdを作成する。
+    let note_path = create_note(&challenge_dir, &challenge_info.meta.title_with_space)?;
+    println!("note.mdを作成しました: {}", note_path.display());
 
     Ok(challenge_dir)
 }
@@ -68,4 +69,16 @@ fn expand_file(problem_dir: &Path, downloaded_file: ChallengeData) -> Result<()>
         fs::remove_file(&downloaded_file_path)?;
     }
     Ok(())
+}
+
+/// note.mdを作成する
+fn create_note(challenge_dir: &Path, title: &str) -> Result<PathBuf> {
+    // 問題ディレクトリにnote.mdを作成する。
+    let note_path = challenge_dir.join("note.md");
+    let mut note_file = File::create(&note_path).context("note.mdの作成に失敗しました。")?;
+
+    note_file.write_all(format!("# {}\n\n", title).as_bytes())?;
+    note_file.write_all("## 解法\n\n".as_bytes())?;
+    note_file.write_all("## 学び\n\n".as_bytes())?;
+    Ok(note_path)
 }
