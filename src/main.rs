@@ -67,20 +67,70 @@ fn input_url() -> Result<Url> {
         .read_line(&mut url)
         .context("URLの入力に失敗しました")
         .unwrap();
-    validate_domain(url.trim())
+    normalize_url(url.trim())
 }
 
-/// URLが https://alpacahack.com のものであることを確認する。
-fn validate_domain(url: &str) -> Result<Url> {
-    let url = Url::parse(url)?;
+/// URLが正しいことを確かめて、正規化する。
+/// 具体的には以下のことをする。
+/// * URLがURLとしてパースできることを確認する。
+/// * URLが https://alpacahack.com/daily/challenges/<something> の形式であることを確認する。
+/// * クエリパラメータを取り除く。
+/// * フラグメントを取り除く。
+fn normalize_url(url: &str) -> Result<Url> {
+    let mut url = validate_url(url)?;
+    // クエリパラメータを取り除く
+    url.set_query(None);
+    // フラグメントを取り除く
+    url.set_fragment(None);
+
+    Ok(url)
+}
+
+/// URLが https://alpacahack.com/daily/challenges/<something> の形式であることを確かめる
+fn validate_url(url: &str) -> Result<Url> {
+    let url = Url::parse(url).context("URLのパースに失敗しました。")?;
+    validate_scheme(&url)?;
+    validate_domain(&url)?;
+    validate_path(&url)?;
+    Ok(url)
+}
+
+/// URLのスキームが https であることを確認する。
+fn validate_scheme(url: &Url) -> Result<()> {
+    if url.scheme() != "https" {
+        return Err(anyhow::anyhow!("URLのスキームは https である必要があります。"));
+    }
+    Ok(())
+}
+
+/// URLにドメインがあり、ドメイン名が <https://alpacahack.com> であることを確認する。
+fn validate_domain(url: &Url) -> Result<()> {
     let domain = url
         .domain()
         .ok_or(anyhow::anyhow!("ドメイン名がありません。"))?;
     if domain == "alpacahack.com" {
-        Ok(url)
+        Ok(())
     } else {
-        Err(anyhow::anyhow!("ドメイン名が正しくありません。"))
+        Err(anyhow::anyhow!(
+            "ドメイン名が正しくありません。: {}",
+            domain
+        ))
     }
+}
+
+/// URLのパスが /daily/challenges/<something> の形式であることを確認する。
+fn validate_path(url: &Url) -> Result<()> {
+    let segments: Vec<_> = url
+        .path_segments()
+        .ok_or(anyhow::anyhow!("URLのパスが取得できませんでした。"))?
+        .collect();
+
+    if segments.len() != 3 || segments[0] != "daily" || segments[1] != "challenges" || segments[2].is_empty() {
+        return Err(anyhow::anyhow!(
+            "URLの形式は https://alpacahack.com/daily/challenges/<something> の必要があります。"
+        ));
+    }
+    Ok(())
 }
 
 /// alpacahackディレクトリのパスを取得する。
