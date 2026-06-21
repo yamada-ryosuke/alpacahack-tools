@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use reqwest::Url;
 use scraper::Html;
 
-use crate::challenge_info::ChallengeMeta;
+use crate::{AlpacaHackUrl, challenge_info::ChallengeMeta};
 
 /// 問題ページを解析して、必要なデータを抽出する。
 ///
@@ -14,7 +14,7 @@ use crate::challenge_info::ChallengeMeta;
 /// # 返り値
 /// 返り値は ChallengeMeta とオプションのファイルURL。
 pub fn analyze_document(
-    challenge_url: &Url,
+    challenge_url: &AlpacaHackUrl,
     document: &str,
 ) -> Result<(ChallengeMeta, Option<Url>)> {
     let document = scraper::Html::parse_document(document);
@@ -25,7 +25,7 @@ pub fn analyze_document(
             url: challenge_url.clone(),
             released_at: get_date(&document)?,
             title: get_title(&document)?,
-            project_name: get_project_name(challenge_url)?,
+            project_name: challenge_url.project_name(),
         },
         get_file_url(&document)?,
     ))
@@ -98,19 +98,6 @@ fn convert_to_naive_date(date_string: &str) -> Result<NaiveDate> {
     Ok(date)
 }
 
-/// URLからプロジェクト名に使うkebab-caseの問題タイトルを取得する。
-///
-/// challenge_url のパス末尾のセグメントをそのまま返す。
-fn get_project_name(challenge_url: &Url) -> Result<String> {
-    let challenge_name = challenge_url
-        .path_segments()
-        .ok_or(anyhow::anyhow!("URLのパスがありません。"))?
-        .filter(|segment| !segment.is_empty())
-        .next_back()
-        .ok_or(anyhow::anyhow!("URLのパスが空です。"))?;
-    Ok(challenge_name.to_owned())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,23 +114,6 @@ mod tests {
     #[test]
     fn test_convert_to_naive_date_invalid_format() {
         let result = convert_to_naive_date("2024-01-01");
-        assert!(result.is_err());
-    }
-
-    /// URLの末尾からプロジェクト名（kebab-case）を正しく抽出できることを確認するテスト
-    #[test]
-    fn test_get_project_name_valid_url() {
-        let url = Url::parse("https://alpacahack.com/daily/challenges/secret-table").unwrap();
-        let result = get_project_name(&url);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "secret-table");
-    }
-
-    /// URLのパスが空の場合はエラーになることを確認するテスト
-    #[test]
-    fn test_get_project_name_empty_path() {
-        let url = Url::parse("https://alpacahack.com").unwrap();
-        let result = get_project_name(&url);
         assert!(result.is_err());
     }
 }

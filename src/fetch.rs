@@ -4,13 +4,13 @@ mod analyse;
 use anyhow::Result;
 use reqwest::Url;
 
-use crate::challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta};
+use crate::{AlpacaHackUrl, challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta}};
 
 /// URLを基に問題に関するデータを取得する。
 ///
 /// `challenge_url` から問題ページを取得し、ページのメタデータと添付ファイルを
 /// 組み合わせて `ChallengeInfo` として返す。
-pub fn fetch_challenge_data(challenge_url: &Url) -> Result<ChallengeInfo> {
+pub fn fetch_challenge_data(challenge_url: &AlpacaHackUrl) -> Result<ChallengeInfo> {
     let (meta, file_url) = fetch_challenge_meta(challenge_url)?;
     let attached = file_url.map(fetch_challenge_attachment).transpose()?;
     Ok(ChallengeInfo { meta, attached })
@@ -30,7 +30,7 @@ fn fetch_challenge_attachment(file_url: Url) -> Result<ChallengeFile> {
 /// 問題ページから問題のメタデータと添付ファイルの URL を取得する。
 ///
 /// `challenge_url` のページを取得し、`analyse::analyze_document` で解析する。
-fn fetch_challenge_meta(challenge_url: &Url) -> Result<(ChallengeMeta, Option<Url>)> {
+fn fetch_challenge_meta(challenge_url: &AlpacaHackUrl) -> Result<(ChallengeMeta, Option<Url>)> {
     // challenge_urlからデータを取得する。
     let document = reqwest::blocking::get(challenge_url.as_str())?.text()?;
     // documentから情報を抽出する
@@ -97,7 +97,7 @@ use reqwest::Url;
     ///
     /// 実際のページを取得して analyse::analyze_document の結果を検証する。
     fn fetch_challenge_meta_for_rsa2026_url() -> Result<()> {
-        let url = Url::parse("https://alpacahack.com/daily/challenges/rsa2026")?;
+        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/rsa2026")?;
         let (meta, attached_url) = fetch_challenge_meta(&url)?;
 
         let expected_meta = ChallengeMeta {

@@ -4,6 +4,8 @@ mod challenge_info;
 mod fetch;
 /// 問題プロジェクトを作成する機能のモジュール
 mod project;
+/// AlpacaHackのURLの構造体のあるモジュール
+mod alpacahack_url;
 
 use std::{
     io::{self, Write},
@@ -12,7 +14,8 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use reqwest::Url;
+
+use crate::alpacahack_url::AlpacaHackUrl;
 
 fn main() -> Result<()> {
     // 問題ページのURLを入力してもらう。
@@ -41,7 +44,10 @@ fn main() -> Result<()> {
 ///
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
-fn setup_challenge_project(challenge_url: &Url, alpacahack_directory: &Path) -> Result<PathBuf> {
+fn setup_challenge_project(
+    challenge_url: &AlpacaHackUrl,
+    alpacahack_directory: &Path,
+) -> Result<PathBuf> {
     // 問題情報を取得する。
     let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
     println!("問題情報を取得しました");
@@ -55,7 +61,7 @@ fn setup_challenge_project(challenge_url: &Url, alpacahack_directory: &Path) -> 
 }
 
 /// 問題ページのURLを入力してもらう。
-fn input_url() -> Result<Url> {
+fn input_url() -> Result<AlpacaHackUrl> {
     print!("問題ページのurl> ");
     io::stdout()
         .flush()
@@ -67,70 +73,7 @@ fn input_url() -> Result<Url> {
         .read_line(&mut url)
         .context("URLの入力に失敗しました")
         .unwrap();
-    normalize_url(url.trim())
-}
-
-/// URLが正しいことを確かめて、正規化する。
-/// 具体的には以下のことをする。
-/// * URLがURLとしてパースできることを確認する。
-/// * URLが https://alpacahack.com/daily/challenges/<something> の形式であることを確認する。
-/// * クエリパラメータを取り除く。
-/// * フラグメントを取り除く。
-fn normalize_url(url: &str) -> Result<Url> {
-    let mut url = validate_url(url)?;
-    // クエリパラメータを取り除く
-    url.set_query(None);
-    // フラグメントを取り除く
-    url.set_fragment(None);
-
-    Ok(url)
-}
-
-/// URLが https://alpacahack.com/daily/challenges/<something> の形式であることを確かめる
-fn validate_url(url: &str) -> Result<Url> {
-    let url = Url::parse(url).context("URLのパースに失敗しました。")?;
-    validate_scheme(&url)?;
-    validate_domain(&url)?;
-    validate_path(&url)?;
-    Ok(url)
-}
-
-/// URLのスキームが https であることを確認する。
-fn validate_scheme(url: &Url) -> Result<()> {
-    if url.scheme() != "https" {
-        return Err(anyhow::anyhow!("URLのスキームは https である必要があります。"));
-    }
-    Ok(())
-}
-
-/// URLにドメインがあり、ドメイン名が <https://alpacahack.com> であることを確認する。
-fn validate_domain(url: &Url) -> Result<()> {
-    let domain = url
-        .domain()
-        .ok_or(anyhow::anyhow!("ドメイン名がありません。"))?;
-    if domain == "alpacahack.com" {
-        Ok(())
-    } else {
-        Err(anyhow::anyhow!(
-            "ドメイン名が正しくありません。: {}",
-            domain
-        ))
-    }
-}
-
-/// URLのパスが /daily/challenges/<something> の形式であることを確認する。
-fn validate_path(url: &Url) -> Result<()> {
-    let segments: Vec<_> = url
-        .path_segments()
-        .ok_or(anyhow::anyhow!("URLのパスが取得できませんでした。"))?
-        .collect();
-
-    if segments.len() != 3 || segments[0] != "daily" || segments[1] != "challenges" || segments[2].is_empty() {
-        return Err(anyhow::anyhow!(
-            "URLの形式は https://alpacahack.com/daily/challenges/<something> の必要があります。"
-        ));
-    }
-    Ok(())
+    AlpacaHackUrl::new(url.trim())
 }
 
 /// alpacahackディレクトリのパスを取得する。
@@ -209,7 +152,8 @@ mod daily_alpacahack_test {
     /// 問題タイトルとファイル名が一致しているパターン
     #[test]
     fn test_emojify_matching() {
-        let challenge_url = Url::parse("https://alpacahack.com/daily/challenges/emojify").unwrap();
+        let challenge_url =
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/emojify").unwrap();
 
         let dir = tempdir().unwrap();
 
@@ -274,7 +218,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_a_fact_of_ctf_mismatch() {
         let challenge_url =
-            Url::parse("https://alpacahack.com/daily/challenges/a-fact-of-ctf").unwrap();
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/a-fact-of-ctf").unwrap();
 
         let dir = tempdir().unwrap();
 
@@ -310,7 +254,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_non_tar_file() {
         let challenge_url =
-            Url::parse("https://alpacahack.com/daily/challenges/read-assembly").unwrap();
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/read-assembly").unwrap();
 
         let dir = tempdir().unwrap();
 
@@ -343,7 +287,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_no_file() {
         let challenge_url =
-            Url::parse("https://alpacahack.com/daily/challenges/alpacahack-2100").unwrap();
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpacahack-2100").unwrap();
 
         let dir = tempdir().unwrap();
 
