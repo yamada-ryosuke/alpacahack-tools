@@ -7,6 +7,7 @@ edition = "2024"
 anyhow = "1.0.102"
 bytes = "1.11.1"
 chrono = { version = "0.4.45", features = ["serde"] }
+directories = "6.0.0"
 dirs = "6.0.0"
 flate2 = "1.1.9"
 reqwest = { version = "0.13.4", features = ["blocking"] }

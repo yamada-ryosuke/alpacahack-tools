@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use crate::prelude::AlpacaHackUrl;
 
 /// 問題に関する情報
-#[derive(Debug)]
 pub struct ChallengeInfo {
     /// 問題に関するメタデータ
     pub meta: ChallengeMeta,
@@ -27,7 +26,6 @@ pub struct ChallengeMeta {
 }
 
 /// 問題ページで配布されるファイル
-#[derive(Debug)]
 pub struct ChallengeFile {
     /// データのURL
     pub _url: Url,
