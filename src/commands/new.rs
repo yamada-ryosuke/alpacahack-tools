@@ -3,29 +3,37 @@ mod fetch;
 /// 問題プロジェクトを作成する機能のモジュール
 mod project;
 
-use std::{io::{self, Write}, path::{Path, PathBuf}, process};
+use std::{
+    io::{self, Write},
+    path::{Path, PathBuf},
+    process,
+};
 
 use anyhow::{Context, Result};
-use directories::ProjectDirs;
 
-use crate::{config, prelude::*};
+use crate::{cli::NewArgs, config, prelude::*};
 
 /// サブコマンド`new`の動作
-pub fn run() {
-    // alpacahack-newのプロジェクトディレクトリを取得する。
-    let alpacahack_new = ProjectDirs::from("", "", "alpacahack-new")
-        .expect("alpacahack-newのプロジェクトディレクトリを取得できませんでした。");
-    let config = config::load(alpacahack_new).expect("設定を取得できませんでした。");
+pub fn run(args: NewArgs) {
+    let config = config::load().expect("設定を取得できませんでした。");
 
     // 問題ページのURLを入力してもらう。
-    let challenge_url = input_url().context("不正なURLです。").unwrap();
+    let challenge_url = match args.url {
+        Some(url) => url,
+        None => input_url().context("入出力に失敗しました。").unwrap(),
+    };
+    // URLをバリデートする。
+    let challenge_url = AlpacaHackUrl::new(challenge_url.trim())
+        .context("不正なURLです。")
+        .unwrap();
 
-    let challenge_dir = setup_challenge_project(&challenge_url, &config.alpacahack_dir).unwrap();
+    let challenge_dir = setup_challenge_project(&challenge_url, &config.workspace).unwrap();
 
     // VSCodeでディレクトリを開く。
-    open_vscode(&challenge_dir).context("VSCodeでディレクトリを開けませんでした。").unwrap();
+    open_vscode(&challenge_dir)
+        .context("VSCodeでディレクトリを開けませんでした。")
+        .unwrap();
     println!("VSCodeでディレクトリを開きました。");
-
 }
 
 /// 指定した URL から問題データを取得し、作業ディレクトリに問題プロジェクトを作成する。
@@ -57,7 +65,7 @@ fn setup_challenge_project(
 }
 
 /// 問題ページのURLを入力してもらう。
-fn input_url() -> Result<AlpacaHackUrl> {
+fn input_url() -> Result<String> {
     print!("問題ページのurl> ");
     io::stdout()
         .flush()
@@ -69,7 +77,7 @@ fn input_url() -> Result<AlpacaHackUrl> {
         .read_line(&mut url)
         .context("URLの入力に失敗しました")
         .unwrap();
-    AlpacaHackUrl::new(url.trim())
+    Ok(url)
 }
 
 /// VSCodeで問題ディレクトリを開く。
@@ -80,7 +88,6 @@ fn open_vscode(challenge_dir: &Path) -> Result<()> {
         .wait()?;
     Ok(())
 }
-
 
 #[cfg(test)]
 mod daily_alpacahack_test {
