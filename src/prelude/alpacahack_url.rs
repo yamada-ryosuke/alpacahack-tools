@@ -41,7 +41,6 @@ impl AlpacaHackUrl {
         let challenge_name = self
             .path_segments()
             .expect("原因不明のバグによりURLのバリデーションが機能していません。")
-            .filter(|segment| !segment.is_empty())
             .next_back()
             .expect("原因不明のバグによりURLのバリデーションが機能していません。");
         challenge_name.into()
@@ -117,7 +116,8 @@ mod tests {
     /// URLの末尾からプロジェクト名（kebab-case）を正しく抽出できることを確認するテスト
     #[test]
     fn test_project_name_valid_url() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/secret-table").unwrap();
+        let url =
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/secret-table").unwrap();
         let project_name = url.project_name();
         assert_eq!(project_name, "secret-table");
     }
@@ -130,7 +130,10 @@ mod tests {
 
     #[test]
     fn test_project_name_single_word() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/message-for-you?month=2026-04").unwrap();
+        let url = AlpacaHackUrl::new(
+            "https://alpacahack.com/daily/challenges/message-for-you?month=2026-04",
+        )
+        .unwrap();
         assert_eq!(url.project_name(), "message-for-you");
     }
 
@@ -148,7 +151,7 @@ mod tests {
             "https://alpacahack.com/daily/challenges/alpaca-rangers-2?month=2026-05#section",
         )
         .unwrap();
-        
+
         // URLのクエリとフラグメントが削除されていることを確認
         assert_eq!(url.query(), None);
         assert_eq!(url.fragment(), None);
@@ -161,14 +164,17 @@ mod tests {
     /// クエリパラメータだけが付いているURLを正規化できることを確認するテスト
     #[test]
     fn test_new_normalizes_query_only() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/small-n?month=2026-05&b=2").unwrap();
+        let url =
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/small-n?month=2026-05&b=2")
+                .unwrap();
         assert_eq!(url.query(), None);
     }
 
     /// フラグメントだけが付いているURLを正規化できることを確認するテスト
     #[test]
     fn test_new_normalizes_fragment_only() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/func-array#top").unwrap();
+        let url =
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/func-array#top").unwrap();
         assert_eq!(url.fragment(), None);
     }
 
@@ -177,10 +183,12 @@ mod tests {
     fn test_new_rejects_http_scheme() {
         let result = AlpacaHackUrl::new("http://alpacahack.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("https である必要があります"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("https である必要があります")
+        );
     }
 
     #[test]
@@ -194,15 +202,18 @@ mod tests {
     fn test_new_rejects_wrong_domain() {
         let result = AlpacaHackUrl::new("https://example.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("ドメイン名が正しくありません"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("ドメイン名が正しくありません")
+        );
     }
 
     #[test]
     fn test_new_rejects_subdomain() {
-        let result = AlpacaHackUrl::new("https://api.alpacahack.com/daily/challenges/alpaca-plus-plus");
+        let result =
+            AlpacaHackUrl::new("https://api.alpacahack.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
     }
 
@@ -211,10 +222,12 @@ mod tests {
     fn test_new_rejects_wrong_path_structure() {
         let result = AlpacaHackUrl::new("https://alpacahack.com/challenges/test");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("/daily/challenges/<something>"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("/daily/challenges/<something>")
+        );
     }
 
     #[test]
@@ -225,13 +238,15 @@ mod tests {
 
     #[test]
     fn test_new_rejects_path_with_trailing_slash() {
-        let result = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/");
+        let result =
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_new_rejects_extra_path_segments() {
-        let result = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/extra");
+        let result =
+            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/extra");
         assert!(result.is_err());
     }
 
@@ -239,7 +254,7 @@ mod tests {
     #[test]
     fn test_deref_url_methods() {
         let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
-        
+
         // Derefを通じてUrl のメソッドが使えることを確認
         assert_eq!(url.scheme(), "https");
         assert_eq!(url.domain(), Some("alpacahack.com"));
@@ -249,10 +264,7 @@ mod tests {
     #[test]
     fn test_deref_as_str() {
         let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
-        assert_eq!(
-            url.as_str(),
-            "https://alpacahack.com/daily/challenges/test"
-        );
+        assert_eq!(url.as_str(), "https://alpacahack.com/daily/challenges/test");
     }
 
     // ==================== EquaityとCloneのテスト ====================
@@ -283,10 +295,12 @@ mod tests {
     fn test_new_rejects_invalid_url_format() {
         let result = AlpacaHackUrl::new("not a url");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("URLのパースに失敗しました"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("URLのパースに失敗しました")
+        );
     }
 
     #[test]

@@ -3,14 +3,14 @@ use chrono::NaiveDate;
 use reqwest::Url;
 use scraper::Html;
 
-use crate::{AlpacaHackUrl, challenge_info::ChallengeMeta};
+use crate::prelude::*;
 
 /// 問題ページを解析して、必要なデータを抽出する。
 ///
 /// # 引数
 /// - challenge_url: 元の問題ページのURL
 /// - document: HTML文字列
-/// 
+///
 /// # 返り値
 /// 返り値は ChallengeMeta とオプションのファイルURL。
 pub fn analyze_document(
@@ -107,7 +107,10 @@ mod tests {
     fn test_convert_to_naive_date_valid() {
         let result = convert_to_naive_date("Jan  1, 2024");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), NaiveDate::from_ymd_opt(2024, 1, 1).unwrap());
+        assert_eq!(
+            result.unwrap(),
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
+        );
     }
 
     /// 無効な形式の日付文字列はエラーになることを確認するテスト

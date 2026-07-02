@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
-use crate::AlpacaHackUrl;
+use crate::prelude::AlpacaHackUrl;
 
 /// 問題に関する情報
 #[derive(Debug)]

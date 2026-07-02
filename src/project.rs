@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta};
+use crate::prelude::*;
 
 /// 与えたデータを基に問題プロジェクトを作成する。
 ///

@@ -1,11 +1,9 @@
-/// 問題の情報を持つための構造体
-mod challenge_info;
 /// 問題ページから問題の情報を取得する機能のモジュール
 mod fetch;
+/// ユビキタス言語っぽいやつ
+mod prelude;
 /// 問題プロジェクトを作成する機能のモジュール
 mod project;
-/// AlpacaHackのURLの構造体のあるモジュール
-mod alpacahack_url;
 
 use std::{
     io::{self, Write},
@@ -15,7 +13,7 @@ use std::{
 
 use anyhow::{Context, Result};
 
-use crate::alpacahack_url::AlpacaHackUrl;
+use crate::prelude::*;
 
 fn main() -> Result<()> {
     // 問題ページのURLを入力してもらう。
@@ -45,7 +43,7 @@ fn main() -> Result<()> {
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
 fn setup_challenge_project(
-    challenge_url: &AlpacaHackUrl,
+    challenge_url: &prelude::AlpacaHackUrl,
     alpacahack_directory: &Path,
 ) -> Result<PathBuf> {
     // 問題情報を取得する。
@@ -98,7 +96,7 @@ fn open_vscode(challenge_dir: &Path) -> Result<()> {
 mod daily_alpacahack_test {
     use std::{fs, io::Read};
 
-    use crate::challenge_info::ChallengeMeta;
+    use crate::prelude::ChallengeMeta;
 
     use super::*;
     use chrono::NaiveDate;

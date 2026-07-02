@@ -4,7 +4,7 @@ mod analyse;
 use anyhow::Result;
 use reqwest::Url;
 
-use crate::{AlpacaHackUrl, challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta}};
+use crate::prelude::*;
 
 /// URLを基に問題に関するデータを取得する。
 ///
@@ -60,14 +60,16 @@ mod tests {
     use super::*;
     use anyhow::Result;
     use chrono::NaiveDate;
-use reqwest::Url;
+    use reqwest::Url;
 
     #[test]
     /// URLの末尾のパス要素からファイル名を正しく取得できることを確認するテスト。
     ///
     /// 例: ".../secret-table.tar.gz" から "secret-table.tar.gz" を返す。
     fn get_filename_returns_last_path_segment() -> Result<()> {
-        let url = Url::parse("https://alpacahack-prod.s3.ap-northeast-1.amazonaws.com/69bf0ca5-a858-486a-9fac-f94b65f642a3/secret-table.tar.gz")?;
+        let url = Url::parse(
+            "https://alpacahack-prod.s3.ap-northeast-1.amazonaws.com/69bf0ca5-a858-486a-9fac-f94b65f642a3/secret-table.tar.gz",
+        )?;
         assert_eq!(get_filename(&url)?, "secret-table.tar.gz");
         Ok(())
     }
