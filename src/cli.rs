@@ -29,5 +29,5 @@ pub struct NewArgs {
 pub struct ConfigArgs {
     /// 各プロジェクトを展開するワークスペースディレクトリの絶対パス。
     #[arg(long)]
-    pub workspace: Option<String>
+    pub workspace: Option<String>,
 }

@@ -18,7 +18,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            workspace: BaseDirs::new().unwrap().home_dir().join("alpacahack")
+            workspace: BaseDirs::new().unwrap().home_dir().join("alpacahack"),
         }
     }
 }
@@ -46,7 +46,9 @@ pub fn load() -> Result<Config> {
 /// 設定ファイルが存在しない場合は作成する。
 pub fn save(config: &Config) -> Result<()> {
     let config_path = get_config_path()?;
-    fs::create_dir_all(&config_path.parent().unwrap()).context("設定ファイルのあるディレクトリの作成に失敗しました。").unwrap();
+    fs::create_dir_all(&config_path.parent().unwrap())
+        .context("設定ファイルのあるディレクトリの作成に失敗しました。")
+        .unwrap();
     let mut file =
         File::create(config_path).context("設定ファイルの作成または取得に失敗しました。")?;
 

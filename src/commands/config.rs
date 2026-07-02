@@ -18,4 +18,6 @@ pub fn run(args: ConfigArgs) {
     crate::config::save(&config)
         .context("設定を保存できませんでした。")
         .unwrap();
+
+    println!("{}", toml::to_string_pretty(&config).unwrap());
 }
