@@ -8,7 +8,7 @@ use anyhow::{Context, Result};
 use directories::{BaseDirs, ProjectDirs};
 use serde::{Deserialize, Serialize};
 
-/// alpacahack-newの設定
+/// alpacahack-toolsの設定
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
     /// 各問題のプロジェクトを展開するワークスペースディレクトリのパス
@@ -64,8 +64,8 @@ fn get_config_path() -> Result<PathBuf> {
     Ok(get_project_dirs()?.config_local_dir().join("config.toml"))
 }
 
-/// alpacahack-newのプロジェクトディレクトリを取得する。
+/// alpacahack-toolsのプロジェクトディレクトリを取得する。
 fn get_project_dirs() -> Result<ProjectDirs> {
-    ProjectDirs::from("", "", "alpacahack-new")
-        .context("alpacahack-newのプロジェクトディレクトリを取得できませんでした。")
+    ProjectDirs::from("", "", "alpacahack-tools")
+        .context("alpacahack-toolsのプロジェクトディレクトリを取得できませんでした。")
 }

@@ -1,7 +1,7 @@
-# alpacahack-new
+# alpacahack-tools
 AlapacaHackの問題ディレクトリを作成するコマンド。
 ```bash
-alpacaha-new
+alpacahack-tools new
 ```
 で起動。
 ```
