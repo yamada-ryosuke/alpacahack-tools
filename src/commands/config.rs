@@ -17,7 +17,7 @@ pub fn run(args: ConfigArgs) {
 
 /// 設定を変更する
 fn set(args: ConfigSetArgs) {
-    let mut config = crate::config::load()
+    let mut config = Config::load()
         .context("現在の設定を取得できませんでした。")
         .unwrap();
 
@@ -33,7 +33,8 @@ fn set(args: ConfigSetArgs) {
         ));
     }
 
-    crate::config::save(&config)
+    config
+        .save()
         .context("設定を保存できませんでした。")
         .unwrap();
 
@@ -42,14 +43,15 @@ fn set(args: ConfigSetArgs) {
 
 /// 設定を初期化する。
 fn init() {
-    crate::config::save(&Config::default())
+    Config::default()
+        .save()
         .context("設定の初期化に失敗しました。")
         .unwrap();
 }
 
 /// 設定ファイルを表示する。
 fn display() {
-    let config = crate::config::load()
+    let config = Config::load()
         .context("設定を取得できませんでした。")
         .unwrap();
     println!("{}", toml::to_string_pretty(&config).unwrap());

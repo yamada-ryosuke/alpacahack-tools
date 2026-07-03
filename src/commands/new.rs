@@ -11,17 +11,19 @@ use std::{
 
 use anyhow::{Context, Result};
 
-use crate::{cli::NewArgs, config, prelude::*};
+use crate::{cli::NewArgs, config::Config, prelude::*};
 
 /// サブコマンド`new`の動作
 pub fn run(args: NewArgs) {
     // 設定ファイルからワークスペースのパスを取り出す。
     // ワークスペースの設定が存在しない場合はエラー。
-    let config = config::load().expect("設定を取得できませんでした。");
+    let config = Config::load().expect("設定を取得できませんでした。");
     let workspace = match config.workspace {
         Some(workspace) => workspace,
         None => {
-            panic!("ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。");
+            panic!(
+                "ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。"
+            );
         }
     };
 
@@ -56,10 +58,7 @@ pub fn run(args: NewArgs) {
 ///
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
-fn setup_challenge_project(
-    challenge_url: &AlpacaHackUrl,
-    workspace: &Path,
-) -> Result<PathBuf> {
+fn setup_challenge_project(challenge_url: &AlpacaHackUrl, workspace: &Path) -> Result<PathBuf> {
     // 問題情報を取得する。
     let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
     println!("問題情報を取得しました");
