@@ -57,6 +57,22 @@ fn get_challenge_url(args: &NewArgs) -> Result<AlpacaHackUrl> {
     AlpacaHackUrl::new(url.trim()).context("不正なURLです。")
 }
 
+/// 問題ページのURLを入力してもらう。
+fn input_url() -> Result<String> {
+    print!("問題ページのurl> ");
+    io::stdout()
+        .flush()
+        .context("標準出力に失敗しました。")
+        .unwrap();
+
+    let mut url = String::new();
+    io::stdin()
+        .read_line(&mut url)
+        .context("URLの入力に失敗しました")
+        .unwrap();
+    Ok(url)
+}
+
 /// 指定した URL から問題データを取得し、作業ディレクトリに問題プロジェクトを作成する。
 ///
 /// # 引数
@@ -80,22 +96,6 @@ fn setup_challenge_project(challenge_url: &AlpacaHackUrl, workspace: &Path) -> R
     println!("問題プロジェクトの作成が完了しました。");
 
     Ok(challenge_dir)
-}
-
-/// 問題ページのURLを入力してもらう。
-fn input_url() -> Result<String> {
-    print!("問題ページのurl> ");
-    io::stdout()
-        .flush()
-        .context("標準出力に失敗しました。")
-        .unwrap();
-
-    let mut url = String::new();
-    io::stdin()
-        .read_line(&mut url)
-        .context("URLの入力に失敗しました")
-        .unwrap();
-    Ok(url)
 }
 
 /// VSCodeで問題ディレクトリを開く。
