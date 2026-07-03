@@ -21,7 +21,7 @@ pub fn run(args: NewArgs) {
     let workspace = match config.workspace {
         Some(workspace) => workspace,
         None => {
-            panic!("ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <full-path>`を実行してください。");
+            panic!("ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。");
         }
     };
 

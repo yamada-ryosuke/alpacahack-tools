@@ -25,7 +25,7 @@ impl Default for Config {
 /// 設定ファイルが存在しない場合は設定ファイルを取得する。
 pub fn load() -> Result<Config> {
     let config_path = get_config_path()?;
-    //
+    // 設定ファイルがなければ作成する。
     if !exists() {
         save(&Config::default())?;
         println!("新しく設定ファイルを作成しました。");
@@ -50,6 +50,7 @@ pub fn save(config: &Config) -> Result<()> {
 }
 
 /// 設定ファイルが存在するか。
+/// モジュール外からは「設定ファイルが存在していない」と「特定の項目が設定されていない」の区別はつかなくていいので、非公開になってる。
 fn exists() -> bool {
     get_config_path().unwrap().exists()
 }
@@ -58,10 +59,10 @@ fn exists() -> bool {
 /// 存在する場合はファイルを書き込みモードで取得する。
 fn create_config_file() -> Result<File> {
     let config_path = get_config_path()?;
-    fs::create_dir_all(&config_path.parent().unwrap())
+    fs::create_dir_all(config_path.parent().unwrap())
         .context("設定ファイルを置くディレクトリの作成に失敗しました。")
         .unwrap();
-    Ok(File::create(config_path).context("設定ファイルの作成または取得に失敗しました。")?)
+    File::create(config_path).context("設定ファイルの作成または取得に失敗しました。")
 }
 
 /// 設定ファイルのパスを取得する。
