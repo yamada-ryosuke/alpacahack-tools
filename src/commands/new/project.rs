@@ -10,7 +10,7 @@ use crate::prelude::*;
 /// 与えたデータを基に問題プロジェクトを作成する。
 ///
 /// # 引数
-/// - `alpacahack_dir`: ベースとなる作業ディレクトリの `Path`。
+/// - `workspace`: ワークスペースの `Path`。
 /// - `challenge_info`: 問題の情報の。
 ///
 /// # 動作
@@ -20,11 +20,11 @@ use crate::prelude::*;
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
 pub(crate) fn create_project(
-    alpacahack_dir: &Path,
+    workspace: &Path,
     challenge_info: ChallengeInfo,
 ) -> Result<PathBuf> {
     // 問題ディレクトリを作成する。
-    let challenge_dir = create_directory(alpacahack_dir, &challenge_info.meta.project_name)
+    let challenge_dir = create_directory(workspace, &challenge_info.meta.project_name)
         .context("問題ディレクトリの作成に失敗しました。")?;
     println!(
         "問題ディレクトリを作成しました: {}",
@@ -47,8 +47,8 @@ pub(crate) fn create_project(
 }
 
 /// 問題プロジェクトのディレクトリを作成する。
-fn create_directory(alpacahack_dir: &Path, challenge_title: &str) -> Result<PathBuf> {
-    let dir_path = alpacahack_dir.join(challenge_title);
+fn create_directory(workspace: &Path, challenge_title: &str) -> Result<PathBuf> {
+    let dir_path = workspace.join(challenge_title);
     // 既に同名のディレクトリが存在していないことを確認する。
     if dir_path.exists() {
         return Err(anyhow::anyhow!(

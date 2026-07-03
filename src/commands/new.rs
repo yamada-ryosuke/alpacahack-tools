@@ -15,7 +15,15 @@ use crate::{cli::NewArgs, config, prelude::*};
 
 /// サブコマンド`new`の動作
 pub fn run(args: NewArgs) {
+    // 設定ファイルからワークスペースのパスを取り出す。
+    // ワークスペースの設定が存在しない場合はエラー。
     let config = config::load().expect("設定を取得できませんでした。");
+    let workspace = match config.workspace {
+        Some(workspace) => workspace,
+        None => {
+            panic!("ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <full-path>`を実行してください。");
+        }
+    };
 
     // 問題ページのURLを入力してもらう。
     let challenge_url = match args.url {
@@ -27,7 +35,7 @@ pub fn run(args: NewArgs) {
         .context("不正なURLです。")
         .unwrap();
 
-    let challenge_dir = setup_challenge_project(&challenge_url, &config.workspace).unwrap();
+    let challenge_dir = setup_challenge_project(&challenge_url, &workspace).unwrap();
 
     // VSCodeでディレクトリを開く。
     open_vscode(&challenge_dir)
@@ -40,7 +48,7 @@ pub fn run(args: NewArgs) {
 ///
 /// # 引数
 /// - `file_url`: ダウンロード対象のファイルを指す `Url`。
-/// - `alpacahack_directory`: ベースとなる作業ディレクトリの `Path`。
+/// - `workspace`: ワークスペースの `Path`。
 ///
 /// # 動作
 /// 1. `file_url` から問題データを非同期で取得する（`fetch::fetch_problem_data` を呼ぶ）。
@@ -50,7 +58,7 @@ pub fn run(args: NewArgs) {
 /// 作成した問題プロジェクトのディレクトリパス。
 fn setup_challenge_project(
     challenge_url: &AlpacaHackUrl,
-    alpacahack_directory: &Path,
+    workspace: &Path,
 ) -> Result<PathBuf> {
     // 問題情報を取得する。
     let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
@@ -58,7 +66,7 @@ fn setup_challenge_project(
     println!("問題タイトル: {}", challenge_info.meta.title);
 
     // 問題プロジェクトを作成する。
-    let challenge_dir = project::create_project(alpacahack_directory, challenge_info)?;
+    let challenge_dir = project::create_project(workspace, challenge_info)?;
     println!("問題プロジェクトの作成が完了しました。");
 
     Ok(challenge_dir)

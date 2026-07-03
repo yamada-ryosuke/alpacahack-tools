@@ -9,10 +9,13 @@ pub fn run(args: ConfigArgs) {
         .context("設定を取得できませんでした。")
         .unwrap();
 
+    let mut message = String::new();
+
     // ワークスペースのパスを変更する
     if let Some(path) = args.workspace {
-        config.workspace = PathBuf::from(path);
-        println!("ワークスペースのパスを変更します。: {}", config.workspace.display());
+        let path = PathBuf::from(path);
+        config.workspace = Some(path.clone());
+        message.push_str(&format!("ワークスペースのパスを変更しました。: {}\n", path.display()));
     }
 
     crate::config::save(&config)
