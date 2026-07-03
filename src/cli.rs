@@ -12,7 +12,7 @@ pub struct Cli {
 pub enum Commands {
     /// プロジェクトディレクトリを作成する。
     New(NewArgs),
-    /// 設定を変更する。
+    /// 設定を変更、閲覧する。
     Config(ConfigArgs),
 }
 
@@ -36,13 +36,15 @@ pub struct ConfigArgs {
 /// alpacahack-tools configのサブコマンド
 #[derive(Subcommand)]
 pub enum ConfigCommands {
+    /// 設定を変更する。
     Set(ConfigSetArgs),
+    /// 設定を初期化する。
     Init,
 }
 
 #[derive(Args)]
 pub struct ConfigSetArgs {
-    /// 各プロジェクトを展開するワークスペースディレクトリの絶対パス。
+    /// 各プロジェクトを展開するワークスペースディレクトリを絶対パスで指定する。
     #[arg(long)]
     pub workspace: Option<String>,
 }
