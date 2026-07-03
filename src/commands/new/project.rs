@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use chrono::Datelike;
 use std::{
     fs::{self, File},
     io::Write,
@@ -19,12 +20,9 @@ use crate::prelude::*;
 ///
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
-pub(crate) fn create_project(
-    workspace: &Path,
-    challenge_info: ChallengeInfo,
-) -> Result<PathBuf> {
+pub(crate) fn create_project(workspace: &Path, challenge_info: ChallengeInfo) -> Result<PathBuf> {
     // 問題ディレクトリを作成する。
-    let challenge_dir = create_directory(workspace, &challenge_info.meta.project_name)
+    let challenge_dir = create_directory(workspace, &challenge_info.meta)
         .context("問題ディレクトリの作成に失敗しました。")?;
     println!(
         "問題ディレクトリを作成しました: {}",
@@ -47,18 +45,25 @@ pub(crate) fn create_project(
 }
 
 /// 問題プロジェクトのディレクトリを作成する。
-fn create_directory(workspace: &Path, challenge_title: &str) -> Result<PathBuf> {
-    let dir_path = workspace.join(challenge_title);
+fn create_directory(workspace: &Path, challenge_meta: &ChallengeMeta) -> Result<PathBuf> {
+    let project_name = challenge_meta.project_name.as_str();
+    let date = &challenge_meta.released_at;
+
+    let challenge_path = workspace
+        .join("challenges")
+        .join("daily")
+        .join(date.format("%Y-%m").to_string())
+        .join(project_name);
     // 既に同名のディレクトリが存在していないことを確認する。
-    if dir_path.exists() {
+    if challenge_path.exists() {
         return Err(anyhow::anyhow!(
             "`{}`のディレクトリは既に存在しています。",
-            challenge_title
+            project_name
         ));
     }
-    fs::create_dir_all(&dir_path)?;
+    fs::create_dir_all(&challenge_path)?;
 
-    Ok(dir_path)
+    Ok(challenge_path)
 }
 
 /// ディレクトリの中にダウンロードしたファイルを展開する。
@@ -66,6 +71,7 @@ fn expand_file(challenge_dir: &Path, downloaded_file: ChallengeFile) -> Result<P
     // ダウンロードしたファイルを保存する。
     let downloaded_file_path = challenge_dir.join(&downloaded_file.name);
     File::create(&downloaded_file_path)?.write_all(&downloaded_file.data)?;
+
     // ダウンロードしたファイルがtar.gzの場合、解凍する。
     if downloaded_file.name.ends_with(".tar.gz") {
         let tar_gz = File::open(&downloaded_file_path)?;
@@ -75,6 +81,7 @@ fn expand_file(challenge_dir: &Path, downloaded_file: ChallengeFile) -> Result<P
         // ダウンロードしたファイルを削除する。
         fs::remove_file(&downloaded_file_path)?;
     }
+
     Ok(downloaded_file_path)
 }
 
@@ -87,6 +94,7 @@ fn write_note(challenge_dir: &Path, title: &str) -> Result<PathBuf> {
     note_file.write_all(format!("# {}\n\n", title).as_bytes())?;
     note_file.write_all("## 解法\n\n".as_bytes())?;
     note_file.write_all("## 学び\n\n".as_bytes())?;
+
     Ok(note_path)
 }
 
