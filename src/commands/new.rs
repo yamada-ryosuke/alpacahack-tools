@@ -18,23 +18,13 @@ pub fn run(args: NewArgs) {
     // 設定ファイルからワークスペースのパスを取り出す。
     // ワークスペースの設定が存在しない場合はエラー。
     let config = Config::load().expect("設定を取得できませんでした。");
-    let workspace = match config.workspace {
-        Some(workspace) => workspace,
-        None => {
-            panic!(
-                "ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。"
-            );
-        }
-    };
+    let workspace = get_workspace(&config).unwrap();
 
-    // 問題ページのURLを入力してもらう。
-    let challenge_url = match args.url {
-        Some(url) => url,
-        None => input_url().context("入出力に失敗しました。").unwrap(),
-    };
-    // URLをバリデートする。
-    let challenge_url = AlpacaHackUrl::new(challenge_url.trim())
-        .context("不正なURLです。")
+    // コマンドライン引数から問題のURLを取得する。
+    // コマンドライン引数で指定されていない場合は対話的に入力してもらう。
+    // その後、URLをバリデートする。
+    let challenge_url = get_challenge_url(&args)
+        .context("URLの取得に失敗しました。")
         .unwrap();
 
     let challenge_dir = setup_challenge_project(&challenge_url, &workspace).unwrap();
@@ -44,6 +34,27 @@ pub fn run(args: NewArgs) {
         .context("VSCodeでディレクトリを開けませんでした。")
         .unwrap();
     println!("VSCodeでディレクトリを開きました。");
+}
+
+/// 設定からワークスペースのパスを取得する。
+/// ワークスペースの設定が存在しない場合はエラー。
+fn get_workspace(config: &Config) -> Result<PathBuf> {
+    match &config.workspace {
+        Some(workspace) => Ok(workspace.clone()),
+        None => Err(anyhow::anyhow!(
+            "ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。"
+        )),
+    }
+}
+
+/// コマンドライン引数から問題のURLを取得する。
+/// コマンドライン引数で指定されていない場合は対話的に入力してもらう。
+fn get_challenge_url(args: &NewArgs) -> Result<AlpacaHackUrl> {
+    let url = match &args.url {
+        Some(url) => url.to_string(),
+        None => input_url().context("入出力に失敗しました。").unwrap(),
+    };
+    AlpacaHackUrl::new(url.trim()).context("不正なURLです。")
 }
 
 /// 指定した URL から問題データを取得し、作業ディレクトリに問題プロジェクトを作成する。
