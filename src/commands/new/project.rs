@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use chrono::Datelike;
 use std::{
     fs::{self, File},
     io::Write,
