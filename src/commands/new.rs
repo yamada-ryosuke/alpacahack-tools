@@ -134,10 +134,11 @@ mod daily_alpacahack_test {
     }
 
     /// ディレクトリ構成が正しいことを確かめる関数
-    fn assert_directory_structure(root: &Path, expected: &FsEntry) {
+    fn assert_directory_structure(challenge_parent_dir: &Path, expected: &FsEntry) {
         match expected {
             FsEntry::File(name) => {
-                let path = root.join(name);
+                let path = challenge_parent_dir.join(name);
+                assert!(path.exists(), "{}が存在しません。", path.display());
                 assert!(
                     path.is_file(),
                     "{}はファイルではありません。",
@@ -145,7 +146,8 @@ mod daily_alpacahack_test {
                 );
             }
             FsEntry::Directory(name, children) => {
-                let dir = root.join(name);
+                let dir = challenge_parent_dir.join(name);
+                assert!(dir.exists(), "{}が存在しません。", dir.display());
                 assert!(
                     dir.is_dir(),
                     "{}はディレクトリではありません。",
@@ -159,15 +161,12 @@ mod daily_alpacahack_test {
     }
 
     /// challenge.tomlの中身が正しいことのテスト
-    fn assert_challenge_toml(root: &Path, expected_challenge_toml: ChallengeMeta) {
+    fn assert_challenge_toml(challenge_dir: &Path, expected_challenge_toml: ChallengeMeta) {
         let mut challenge_toml = String::new();
-        fs::File::open(
-            root.join(&expected_challenge_toml.project_name)
-                .join("challenge.toml"),
-        )
-        .unwrap()
-        .read_to_string(&mut challenge_toml)
-        .unwrap();
+        fs::File::open(challenge_dir.join("challenge.toml"))
+            .unwrap()
+            .read_to_string(&mut challenge_toml)
+            .unwrap();
         let challenge_toml = toml::from_str::<ChallengeMeta>(&challenge_toml).unwrap();
         assert_eq!(challenge_toml, expected_challenge_toml);
     }
@@ -178,9 +177,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/emojify").unwrap();
 
-        let dir = tempdir().unwrap();
+        let workspace = tempdir().unwrap();
 
-        setup_challenge_project(&challenge_url, dir.path()).unwrap();
+        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -223,11 +222,18 @@ mod daily_alpacahack_test {
             ],
         );
 
-        assert_directory_structure(dir.path(), &expected_directory);
+        // 問題ディレクトリ
+        let challenge_dir = workspace
+            .path()
+            .join("challenges")
+            .join("daily")
+            .join("2025-12")
+            .join("emojify");
+        assert_directory_structure(challenge_dir.parent().unwrap(), &expected_directory);
 
         // challenge.tomlの中身が正しいことのテスト
         assert_challenge_toml(
-            dir.path(),
+            &challenge_dir,
             ChallengeMeta {
                 url: challenge_url,
                 released_at: NaiveDate::from_ymd_opt(2025, 12, 3).unwrap(),
@@ -243,9 +249,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/a-fact-of-ctf").unwrap();
 
-        let dir = tempdir().unwrap();
+        let workspace = tempdir().unwrap();
 
-        setup_challenge_project(&challenge_url, dir.path()).unwrap();
+        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -259,11 +265,19 @@ mod daily_alpacahack_test {
                 ),
             ],
         );
-        assert_directory_structure(dir.path(), &expected_directory);
+
+        // 問題ディレクトリ
+        let challenge_dir = workspace
+            .path()
+            .join("challenges")
+            .join("daily")
+            .join("2025-12")
+            .join("a-fact-of-ctf");
+        assert_directory_structure(challenge_dir.parent().unwrap(), &expected_directory);
 
         // challenge.tomlの中身が正しいことのテスト
         assert_challenge_toml(
-            dir.path(),
+            &challenge_dir,
             ChallengeMeta {
                 url: challenge_url,
                 released_at: NaiveDate::from_ymd_opt(2025, 12, 2).unwrap(),
@@ -279,9 +293,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/read-assembly").unwrap();
 
-        let dir = tempdir().unwrap();
+        let workspace = tempdir().unwrap();
 
-        setup_challenge_project(&challenge_url, dir.path()).unwrap();
+        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -292,11 +306,19 @@ mod daily_alpacahack_test {
                 File("asm.txt".into()),
             ],
         );
-        assert_directory_structure(dir.path(), &expected_directory);
+
+        // 問題ディレクトリ
+        let challenge_dir = workspace
+            .path()
+            .join("challenges")
+            .join("daily")
+            .join("2025-12")
+            .join("read-assembly");
+        assert_directory_structure(challenge_dir.parent().unwrap(), &expected_directory);
 
         // challenge.tomlの中身が正しいことのテスト
         assert_challenge_toml(
-            dir.path(),
+            &challenge_dir,
             ChallengeMeta {
                 url: challenge_url,
                 released_at: NaiveDate::from_ymd_opt(2025, 12, 10).unwrap(),
@@ -312,20 +334,28 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpacahack-2100").unwrap();
 
-        let dir = tempdir().unwrap();
+        let workspace = tempdir().unwrap();
 
-        setup_challenge_project(&challenge_url, dir.path()).unwrap();
+        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
             "alpacahack-2100".into(),
             vec![File("note.md".into()), File("challenge.toml".into())],
         );
-        assert_directory_structure(dir.path(), &expected_directory);
+
+        // 問題ディレクトリ
+        let challenge_dir = workspace
+            .path()
+            .join("challenges")
+            .join("daily")
+            .join("2025-12")
+            .join("alpacahack-2100");
+        assert_directory_structure(challenge_dir.parent().unwrap(), &expected_directory);
 
         // challenge.tomlの中身が正しいことのテスト
         assert_challenge_toml(
-            dir.path(),
+            &challenge_dir,
             ChallengeMeta {
                 url: challenge_url,
                 released_at: NaiveDate::from_ymd_opt(2025, 12, 1).unwrap(),
