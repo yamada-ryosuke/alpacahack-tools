@@ -1,12 +1,10 @@
 use clap::Parser;
 
-/// AlpacaHackのURLの構造体のあるモジュール
-mod alpacahack_url;
-/// 問題の情報を持つための構造体
-mod challenge_info;
 /// 設定ファイルを管理するモジュール
 mod config;
 /// ユビキタス言語っぽいやつ
+mod domain;
+/// 大体のモジュールで使うやつ
 mod prelude;
 
 /// 各サブコマンドをまとめたモジュール

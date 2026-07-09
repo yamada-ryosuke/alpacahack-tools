@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use crate::prelude::*;
 
 /// AlpacaHackのURLであることが保証されたURL。
 /// クエリパラメータやフラグメントが取り除かれて正規化されている。

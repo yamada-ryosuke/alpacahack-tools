@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
+
+use crate::prelude::*;
 
 /// alpacahack-toolsの設定
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -41,8 +42,8 @@ mod file {
     };
 
     use super::Config;
-    use anyhow::{Context, Result};
     use directories::ProjectDirs;
+    use crate::prelude::*;
 
     /// 設定を取得する。
     /// 設定ファイルが存在しない場合は設定ファイルを取得する。

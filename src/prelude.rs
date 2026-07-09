@@ -1,2 +1,6 @@
-pub(crate) use crate::alpacahack_url::AlpacaHackUrl;
-pub(crate) use crate::challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta};
+pub use crate::domain::{
+    alpacahack_url::AlpacaHackUrl,
+    challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta},
+};
+
+pub use anyhow::{Result, Context};

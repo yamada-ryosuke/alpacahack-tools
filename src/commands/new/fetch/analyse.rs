@@ -1,4 +1,3 @@
-use anyhow::Result;
 use chrono::NaiveDate;
 use reqwest::Url;
 use scraper::Html;

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use anyhow::Context;
+use crate::prelude::*;
 
 use crate::{
     cli::{ConfigArgs, ConfigCommands, ConfigSetArgs},

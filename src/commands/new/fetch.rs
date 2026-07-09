@@ -1,7 +1,6 @@
 /// 問題ページから取得したデータを解析する
 mod analyse;
 
-use anyhow::Result;
 use reqwest::Url;
 
 use crate::prelude::*;
@@ -58,7 +57,6 @@ fn get_filename(file_url: &Url) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::Result;
     use chrono::NaiveDate;
     use reqwest::Url;
 

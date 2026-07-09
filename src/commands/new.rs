@@ -9,8 +9,6 @@ use std::{
     process,
 };
 
-use anyhow::{Context, Result};
-
 use crate::{cli::NewArgs, config::Config, prelude::*};
 
 /// 新しい問題プロジェクトを作成してエディタで開くメイン処理。
