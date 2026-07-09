@@ -1,6 +1,8 @@
 use crate::prelude::*;
 use std::{
-    fs::{self, File}, io::Write, path::{Path, PathBuf},
+    fs::{self, File},
+    io::Write,
+    path::{Path, PathBuf},
 };
 
 pub struct Workspace {
@@ -9,12 +11,15 @@ pub struct Workspace {
 
 impl Workspace {
     /// プロジェクトのパスを取得する
-    pub fn get_path(&self) -> &Path{
+    pub fn get_path(&self) -> &Path {
         &self.path
     }
 
-    /// pathをパスとするWorkspaceを取得する。
-    /// もしpathのディレクトリが存在しない場合はディレクトリを作成する。
+    /// # 概要
+    /// `path` を基に `Workspace` を作成します。
+    ///
+    /// # 動作
+    /// - 指定した `path` のディレクトリが存在しない場合は作成します。
     pub fn new(path: &Path) -> Result<Self> {
         fs::create_dir_all(path)?;
 
@@ -23,31 +28,37 @@ impl Workspace {
         })
     }
 
+    /// `daily` ディレクトリを返します。存在しない場合は作成します。
     fn get_daily(&self) -> Result<Daily> {
         let daily_path = self.path.join("daily");
         fs::create_dir_all(&daily_path)?;
         Ok(Daily { path: daily_path })
     }
 
-    fn find_project_by_name() -> Vec<Project> {
+    /// 名前でプロジェクトを検索します。
+    ///
+    /// # 戻り値
+    /// 見つかった `Project` の一覧を返します。
+    fn find_project_by_project_name(name: &str) -> Vec<Project> {
         todo!()
     }
 
-    /// 与えたデータを基に問題プロジェクトを作成する。
+    /// # 概要
+    /// 指定した `ChallengeInfo` を基に新しい問題プロジェクトを作成します。
     ///
     /// # 引数
-    /// - `workspace`: ワークスペースの `Path`。
-    /// - `challenge_info`: 問題の情報の。
+    /// - `challenge_info`: 作成するプロジェクトのメタ情報と添付ファイル。
     ///
     /// # 動作
-    /// 1. `file_url` から問題データを非同期で取得する（`fetch::fetch_problem_data` を呼ぶ）。
-    /// 2. 取得した問題情報をもとに、`alpacahack` 配下に問題用プロジェクトを作成する。
+    /// 1. ワークスペース配下にプロジェクト用ディレクトリを作成します。
+    /// 2. 添付ファイルを展開し、`note.md` と `challenge.toml` を生成してプロジェクトを初期化します。
     ///
-    /// # 返り値
-    /// 作成した問題プロジェクトのディレクトリパス。
+    /// # 戻り値
+    /// 成功すると作成した `Project` を返します。ディレクトリが既に存在する場合はエラーを返します。
     pub fn create_project(&self, challenge_info: &ChallengeInfo) -> Result<Project> {
         let meta = &challenge_info.meta;
         let project_path = self.get_project_path(meta);
+
         // 既に同名のディレクトリが存在していないことを確認する。
         if project_path.exists() {
             return Err(anyhow::anyhow!(
@@ -56,16 +67,13 @@ impl Workspace {
             ));
         }
 
+        // ディレクトリを作成する。
         fs::create_dir_all(&project_path).context("問題ディレクトリの作成に失敗しました。")?;
+        println!("問題ディレクトリを作成しました: {}", project_path.display());
 
-        println!(
-            "問題ディレクトリを作成しました: {}",
-            project_path.display()
-        );
-
+        // チャレンジの情報を基にプロジェクトを初期化する。
         let project = Project { path: project_path };
-
-        project.init(challenge_info);
+        project.init(challenge_info)?;
 
         Ok(project)
     }
@@ -82,12 +90,13 @@ impl Workspace {
     }
 }
 
-/// Daily AlpacaHackのディレクトリ
+/// Daily AlpacaHack のディレクトリ
 struct Daily {
     path: PathBuf,
 }
 
 impl Daily {
+    /// 名前でプロジェクトを検索します。
     fn find_project_by_project_name(name: &str) -> Option<Project> {
         todo!();
     }
@@ -101,7 +110,7 @@ pub struct Project {
 
 impl Project {
     /// プロジェクトのパスを取得する
-    pub fn get_path(&self) -> &Path{
+    pub fn get_path(&self) -> &Path {
         &self.path
     }
 
@@ -112,7 +121,8 @@ impl Project {
 
         // 問題に添付されているファイルを展開する。
         if let Some(data) = attached {
-            self.expand_file( data).context("ファイルの展開に失敗しました。")?;
+            self.expand_file(data)
+                .context("ファイルの展開に失敗しました。")?;
             println!("ファイルの展開が完了しました。");
         }
 
@@ -120,6 +130,7 @@ impl Project {
         let note_path = self.create_note(&meta.title)?;
         println!("note.mdを作成しました: {}", note_path.display());
 
+        // challenge.tomlを作成する。
         self.create_challenge_toml(meta)?;
 
         Ok(())
