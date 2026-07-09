@@ -5,6 +5,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+
+/// ワークスペースを表す構造体。
+///
+/// ワークスペースは、プロジェクトや問題ファイルを格納するためのルートディレクトリを管理する。
 pub struct Workspace {
     path: PathBuf,
 }
@@ -16,10 +20,10 @@ impl Workspace {
     }
 
     /// # 概要
-    /// `path` を基に `Workspace` を作成します。
+    /// `path` を基に `Workspace` を作成する。
     ///
     /// # 動作
-    /// - 指定した `path` のディレクトリが存在しない場合は作成します。
+    /// - 指定した `path` のディレクトリが存在しない場合は作成する。
     pub fn new(path: &Path) -> Result<Self> {
         fs::create_dir_all(path)?;
 
@@ -28,33 +32,33 @@ impl Workspace {
         })
     }
 
-    /// `daily` ディレクトリを返します。存在しない場合は作成します。
+    /// `daily` ディレクトリを返す。存在しない場合は作成する。
     fn get_daily(&self) -> Result<Daily> {
         let daily_path = self.path.join("daily");
         fs::create_dir_all(&daily_path)?;
         Ok(Daily { path: daily_path })
     }
 
-    /// 名前でプロジェクトを検索します。
+    /// 名前でプロジェクトを検索する。
     ///
     /// # 戻り値
-    /// 見つかった `Project` の一覧を返します。
+    /// 見つかった `Project` の一覧を返す。
     fn find_project_by_project_name(name: &str) -> Vec<Project> {
         todo!()
     }
 
     /// # 概要
-    /// 指定した `ChallengeInfo` を基に新しい問題プロジェクトを作成します。
+    /// 指定した `ChallengeInfo` を基に新しい問題プロジェクトを作成する。
     ///
     /// # 引数
     /// - `challenge_info`: 作成するプロジェクトのメタ情報と添付ファイル。
     ///
     /// # 動作
-    /// 1. ワークスペース配下にプロジェクト用ディレクトリを作成します。
-    /// 2. 添付ファイルを展開し、`note.md` と `challenge.toml` を生成してプロジェクトを初期化します。
+    /// 1. ワークスペース配下にプロジェクト用ディレクトリを作成する。
+    /// 2. 添付ファイルを展開し、`note.md` と `challenge.toml` を生成してプロジェクトを初期化する。
     ///
     /// # 戻り値
-    /// 成功すると作成した `Project` を返します。ディレクトリが既に存在する場合はエラーを返します。
+    /// 成功すると作成した `Project` を返す。ディレクトリが既に存在する場合はエラーを返す。
     pub fn create_project(&self, challenge_info: &ChallengeInfo) -> Result<Project> {
         let meta = &challenge_info.meta;
         let project_path = self.get_project_path(meta);
@@ -96,7 +100,7 @@ struct Daily {
 }
 
 impl Daily {
-    /// 名前でプロジェクトを検索します。
+    /// 名前でプロジェクトを検索する。
     fn find_project_by_project_name(name: &str) -> Option<Project> {
         todo!();
     }
