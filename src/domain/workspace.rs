@@ -5,7 +5,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-
 /// ワークスペースを表す構造体。
 ///
 /// ワークスペースは、プロジェクトや問題ファイルを格納するためのルートディレクトリを管理する。
@@ -14,11 +13,6 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    /// プロジェクトのパスを取得する
-    pub fn get_path(&self) -> &Path {
-        &self.path
-    }
-
     /// # 概要
     /// `path` を基に `Workspace` を作成する。
     ///
@@ -32,19 +26,9 @@ impl Workspace {
         })
     }
 
-    /// `daily` ディレクトリを返す。存在しない場合は作成する。
-    fn get_daily(&self) -> Result<Daily> {
-        let daily_path = self.path.join("daily");
-        fs::create_dir_all(&daily_path)?;
-        Ok(Daily { path: daily_path })
-    }
-
-    /// 名前でプロジェクトを検索する。
-    ///
-    /// # 戻り値
-    /// 見つかった `Project` の一覧を返す。
-    fn find_project_by_project_name(name: &str) -> Vec<Project> {
-        todo!()
+    /// ワークスペースのパスを取得する。
+    pub fn get_path(&self) -> PathBuf {
+        self.path.clone()
     }
 
     /// # 概要
@@ -60,37 +44,22 @@ impl Workspace {
     /// # 戻り値
     /// 成功すると作成した `Project` を返す。ディレクトリが既に存在する場合はエラーを返す。
     pub fn create_project(&self, challenge_info: &ChallengeInfo) -> Result<Project> {
-        let meta = &challenge_info.meta;
-        let project_path = self.get_project_path(meta);
-
-        // 既に同名のディレクトリが存在していないことを確認する。
-        if project_path.exists() {
-            return Err(anyhow::anyhow!(
-                "`{}`のディレクトリは既に存在しています。",
-                meta.project_name
-            ));
-        }
-
-        // ディレクトリを作成する。
-        fs::create_dir_all(&project_path).context("問題ディレクトリの作成に失敗しました。")?;
-        println!("問題ディレクトリを作成しました: {}", project_path.display());
-
-        // チャレンジの情報を基にプロジェクトを初期化する。
-        let project = Project { path: project_path };
-        project.init(challenge_info)?;
-
-        Ok(project)
+        self.daily().create_project(challenge_info)
     }
 
-    /// プロジェクトのパスを取得する
-    fn get_project_path(&self, challenge_meta: &ChallengeMeta) -> PathBuf {
-        let released_at = &challenge_meta.released_at;
-        let project_name = &challenge_meta.project_name;
-        self.path
-            .join("challenges")
-            .join("daily")
-            .join(released_at.format("%Y-%m").to_string())
-            .join(project_name)
+    /// `daily` ディレクトリを返す。
+    /// ただし、ディレクトリの存在は保証されない。
+    fn daily(&self) -> Daily {
+        let daily_path = self.path.join("challenges").join("daily");
+        Daily { path: daily_path }
+    }
+
+    /// 名前でプロジェクトを検索する。
+    ///
+    /// # 戻り値
+    /// 見つかった `Project` の一覧を返す。
+    fn find_project_by_project_name(name: &str) -> Vec<Project> {
+        todo!()
     }
 }
 
@@ -100,6 +69,38 @@ struct Daily {
 }
 
 impl Daily {
+    fn create_project(&self, challenge_info: &ChallengeInfo) -> Result<Project> {
+        let project_path = self.project_path(&challenge_info.meta);
+        // 既に同名のディレクトリが存在していないことを確認する。
+        if project_path.exists() {
+            anyhow::bail!(
+                "`{}`のディレクトリは既に存在しています。",
+                challenge_info.meta.project_name
+            );
+        }
+
+        // ディレクトリを作成する。
+        fs::create_dir_all(&project_path).context("問題ディレクトリの作成に失敗しました。")?;
+        println!("問題ディレクトリを作成しました: {}", project_path.display());
+
+        let project = Project { path: project_path };
+        // チャレンジの情報を基にプロジェクトを初期化する。
+        project.init(challenge_info)?;
+
+        Ok(project)
+
+    }
+
+    /// `ChallengeMeta` を基に プロジェクトのパスを取得する。
+    fn project_path(&self, challenge_meta: &ChallengeMeta) -> PathBuf {
+        let released_at = &challenge_meta.released_at;
+        let project_name = &challenge_meta.project_name;
+
+        self.path
+            .join(released_at.format("%Y-%m").to_string())
+            .join(project_name)
+    }
+
     /// 名前でプロジェクトを検索する。
     fn find_project_by_project_name(name: &str) -> Option<Project> {
         todo!();
@@ -118,30 +119,30 @@ impl Project {
         &self.path
     }
 
-    /// 初期化ファイルを基にプロジェクトを初期化する。
+    /// `ChallengeInfo` を基にプロジェクトを初期化する。
     fn init(&self, challenge_info: &ChallengeInfo) -> Result<()> {
         let meta = &challenge_info.meta;
         let attached = &challenge_info.attached;
 
         // 問題に添付されているファイルを展開する。
         if let Some(data) = attached {
-            self.expand_file(data)
+            self.add_attached_file(data)
                 .context("ファイルの展開に失敗しました。")?;
             println!("ファイルの展開が完了しました。");
         }
 
         // note.mdを作成する。
-        let note_path = self.create_note(&meta.title)?;
+        let note_path = self.add_note(&meta.title)?;
         println!("note.mdを作成しました: {}", note_path.display());
 
         // challenge.tomlを作成する。
-        self.create_challenge_toml(meta)?;
+        self.add_challenge_toml(meta)?;
 
         Ok(())
     }
 
     /// ディレクトリの中にダウンロードしたファイルを展開する。
-    fn expand_file(&self, downloaded_file: &ChallengeFile) -> Result<PathBuf> {
+    fn add_attached_file(&self, downloaded_file: &ChallengeFile) -> Result<PathBuf> {
         // ダウンロードしたファイルを保存する。
         let downloaded_file_path = self.path.join(&downloaded_file.name);
         File::create(&downloaded_file_path)?.write_all(&downloaded_file.data)?;
@@ -160,7 +161,7 @@ impl Project {
     }
 
     /// 解法などを書くためのnote.mdを作成する
-    fn create_note(&self, title: &str) -> Result<PathBuf> {
+    fn add_note(&self, title: &str) -> Result<PathBuf> {
         // 問題ディレクトリにnote.mdを作成する。
         let note_path = self.path.join("note.md");
         let mut note_file = File::create(&note_path).context("note.mdの作成に失敗しました。")?;
@@ -172,8 +173,8 @@ impl Project {
         Ok(note_path)
     }
 
-    /// 問題の情報などが書かれたchallenge.tomlを作成する
-    fn create_challenge_toml(&self, meta: &ChallengeMeta) -> Result<PathBuf> {
+    /// 問題情報を記述した challenge.toml を作成する。
+    fn add_challenge_toml(&self, meta: &ChallengeMeta) -> Result<PathBuf> {
         let toml_path = self.path.join("challenge.toml");
         let data = toml::to_string_pretty(&meta)?;
 
