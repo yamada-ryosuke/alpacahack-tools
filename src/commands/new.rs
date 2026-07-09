@@ -1,11 +1,8 @@
 /// 問題ページから問題の情報を取得する機能のモジュール
 mod fetch;
-/// 問題プロジェクトを作成する機能のモジュール
-mod project;
 
 use std::{
     io::{self, Write},
-    path::{Path, PathBuf},
     process,
 };
 
@@ -37,10 +34,10 @@ pub fn run(args: NewArgs) {
         .context("URLの取得に失敗しました。")
         .unwrap();
 
-    let challenge_dir = setup_challenge_project(&challenge_url, &workspace).unwrap();
+    let project = setup_challenge_project(&challenge_url, &workspace).unwrap();
 
     // VSCodeでディレクトリを開く。
-    open_vscode(&challenge_dir)
+    open_vscode(&project)
         .context("VSCodeでディレクトリを開けませんでした。")
         .unwrap();
     println!("VSCodeでディレクトリを開きました。");
@@ -48,13 +45,10 @@ pub fn run(args: NewArgs) {
 
 /// 設定からワークスペースのパスを取得する。
 /// ワークスペースの設定が存在しない場合はエラー。
-fn get_workspace(config: &Config) -> Result<PathBuf> {
-    match &config.workspace {
-        Some(workspace) => Ok(workspace.clone()),
-        None => Err(anyhow::anyhow!(
-            "ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。"
-        )),
-    }
+fn get_workspace(config: &Config) -> Result<Workspace> {
+    let path = config.workspace.clone().ok_or(anyhow::anyhow!("ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。"))?;
+
+    Workspace::new(&path)
 }
 
 /// コマンドライン引数から問題のURLを取得する。
@@ -95,23 +89,23 @@ fn input_url() -> Result<String> {
 ///
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
-fn setup_challenge_project(challenge_url: &AlpacaHackUrl, workspace: &Path) -> Result<PathBuf> {
+fn setup_challenge_project(challenge_url: &AlpacaHackUrl, workspace: &Workspace) -> Result<Project> {
     // 問題情報を取得する。
     let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
     println!("問題情報を取得しました");
     println!("問題タイトル: {}", challenge_info.meta.title);
 
     // 問題プロジェクトを作成する。
-    let challenge_dir = project::create_project(workspace, challenge_info)?;
+    let project = workspace.create_project(&challenge_info)?;
     println!("問題プロジェクトの作成が完了しました。");
 
-    Ok(challenge_dir)
+    Ok(project)
 }
 
 /// VSCodeで問題ディレクトリを開く。
-fn open_vscode(challenge_dir: &Path) -> Result<()> {
+fn open_vscode(project: &Project) -> Result<()> {
     process::Command::new("code")
-        .arg(challenge_dir)
+        .arg(project.get_path())
         .spawn()?
         .wait()?;
     Ok(())
@@ -119,7 +113,7 @@ fn open_vscode(challenge_dir: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod daily_alpacahack_test {
-    use std::{fs, io::Read};
+    use std::{fs, io::Read, path::Path};
 
     use super::*;
     use chrono::NaiveDate;
@@ -175,9 +169,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/emojify").unwrap();
 
-        let workspace = tempdir().unwrap();
+        let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
-        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
+        setup_challenge_project(&challenge_url, &workspace).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -222,7 +216,7 @@ mod daily_alpacahack_test {
 
         // 問題ディレクトリ
         let challenge_dir = workspace
-            .path()
+            .get_path()
             .join("challenges")
             .join("daily")
             .join("2025-12")
@@ -247,9 +241,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/a-fact-of-ctf").unwrap();
 
-        let workspace = tempdir().unwrap();
+        let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
-        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
+        setup_challenge_project(&challenge_url, &workspace).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -266,7 +260,7 @@ mod daily_alpacahack_test {
 
         // 問題ディレクトリ
         let challenge_dir = workspace
-            .path()
+            .get_path()
             .join("challenges")
             .join("daily")
             .join("2025-12")
@@ -291,9 +285,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/read-assembly").unwrap();
 
-        let workspace = tempdir().unwrap();
+        let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
-        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
+        setup_challenge_project(&challenge_url, &workspace).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -307,7 +301,7 @@ mod daily_alpacahack_test {
 
         // 問題ディレクトリ
         let challenge_dir = workspace
-            .path()
+            .get_path()
             .join("challenges")
             .join("daily")
             .join("2025-12")
@@ -332,9 +326,9 @@ mod daily_alpacahack_test {
         let challenge_url =
             AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpacahack-2100").unwrap();
 
-        let workspace = tempdir().unwrap();
+        let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
-        setup_challenge_project(&challenge_url, workspace.path()).unwrap();
+        setup_challenge_project(&challenge_url, &workspace).unwrap();
 
         use FsEntry::*;
         let expected_directory = Directory(
@@ -344,7 +338,7 @@ mod daily_alpacahack_test {
 
         // 問題ディレクトリ
         let challenge_dir = workspace
-            .path()
+            .get_path()
             .join("challenges")
             .join("daily")
             .join("2025-12")
