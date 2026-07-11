@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -18,10 +18,22 @@ impl Config {
         file::load()
     }
 
+    /// 指定したパスから設定を取得する。
+    /// 設定ファイルが存在しない場合は設定ファイルを作成してから取得する。
+    pub fn load_from_path(path: impl AsRef<Path>) -> Result<Self> {
+        file::load_from_path(path.as_ref())
+    }
+
     /// 設定を書き込む。
     /// 設定ファイルが存在しない場合は作成する。
     pub fn save(&self) -> Result<()> {
         file::save(self)
+    }
+
+    /// 指定したパスに設定を書き込む。
+    /// 設定ファイルが存在しない場合は作成する。
+    pub fn save_to_path(&self, path: impl AsRef<Path>) -> Result<()> {
+        file::save_to_path(self, path.as_ref())
     }
 }
 
@@ -36,9 +48,8 @@ impl Default for Config {
 /// configモジュール内ではファイル操作関連のクレートをuseしないような形にしたい。
 mod file {
     use std::{
-        fs::{self, File},
-        io::Write,
-        path::PathBuf,
+        fs,
+        path::{Path, PathBuf},
     };
 
     use super::Config;
@@ -48,10 +59,13 @@ mod file {
     /// 設定を取得する。
     /// 設定ファイルが存在しない場合は設定ファイルを取得する。
     pub(super) fn load() -> Result<Config> {
-        let config_path = get_config_file_path()?;
+        load_from_path(&get_config_file_path()?)
+    }
+
+    pub(super) fn load_from_path(config_path: &Path) -> Result<Config> {
         // 設定ファイルがなければ作成する。
-        if !get_config_file_path()?.exists() {
-            Config::default().save()?;
+        if !config_path.exists() {
+            save_to_path(&Config::default(), config_path)?;
             println!("新しく設定ファイルを作成しました。");
         }
 
@@ -69,23 +83,21 @@ mod file {
     /// 設定を書き込む。
     /// 設定ファイルが存在しない場合は作成する。
     pub(super) fn save(config: &Config) -> Result<()> {
-        let mut file = create_if_not_exists()?;
+        save_to_path(config, &get_config_file_path()?)
+    }
+
+    pub(super) fn save_to_path(config: &Config, config_path: &Path) -> Result<()> {
+        // ディレクトリを作成する。
+        if let Some(parent) = config_path.parent() {
+            fs::create_dir_all(parent)
+                .context("設定ファイルを置くディレクトリの作成に失敗しました。")?;
+        }
 
         let data = toml::to_string(config).context("設定データの文字列化に失敗しました。")?;
-        file.write_all(data.as_bytes())
+        fs::write(config_path, data.as_bytes())
             .context("ファイルへの書き込みに失敗しました。")?;
 
         Ok(())
-    }
-
-    /// 設定ファイルを作成する。
-    /// 存在する場合はファイルを書き込みモードで取得する。
-    fn create_if_not_exists() -> Result<File> {
-        let config_path = get_config_file_path()?;
-        fs::create_dir_all(config_path.parent().unwrap())
-            .context("設定ファイルを置くディレクトリの作成に失敗しました。")
-            .unwrap();
-        File::create(config_path).context("設定ファイルの作成または取得に失敗しました。")
     }
 
     /// 設定ファイルのパスを取得する。
@@ -100,5 +112,44 @@ mod file {
     fn get_project_dirs() -> Result<ProjectDirs> {
         ProjectDirs::from("", "", "alpacahack-tools")
             .context("alpacahack-toolsのプロジェクトディレクトリを取得できませんでした。")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{fs, path::PathBuf};
+
+    use tempfile::tempdir;
+
+    use super::Config;
+
+    #[test]
+    fn saves_and_loads_config_from_an_explicit_path() {
+        let temp_dir = tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.toml");
+        let expected = Config {
+            workspace: Some(PathBuf::from("/tmp/workspace")),
+        };
+
+        expected.save_to_path(&config_path).unwrap();
+        let loaded = Config::load_from_path(&config_path).unwrap();
+
+        assert_eq!(loaded, expected);
+        assert!(config_path.exists());
+    }
+
+    #[test]
+    fn creates_a_default_config_file_when_the_target_does_not_exist() {
+        let temp_dir = tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.toml");
+
+        let loaded = Config::load_from_path(&config_path).unwrap();
+
+        assert_eq!(loaded, Config::default());
+        assert!(config_path.exists());
+
+        let written = fs::read_to_string(&config_path).unwrap();
+        let parsed: Config = toml::from_str(&written).unwrap();
+        assert_eq!(parsed, Config::default());
     }
 }

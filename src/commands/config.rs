@@ -88,6 +88,8 @@ fn display() {
 mod tests {
     use std::path::PathBuf;
 
+    use tempfile::tempdir;
+
     use super::{apply_config_changes, format_changes, ConfigChange};
     use crate::{cli::ConfigSetArgs, config::Config};
 
@@ -131,5 +133,35 @@ mod tests {
 
         assert_eq!(config.workspace, None);
         assert!(message.is_empty());
+    }
+
+    #[test]
+    /// setコマンドの振る舞いとして、変更内容が保存されることを確認する。
+    fn set_command_persists_workspace_changes() {
+        let temp_dir = tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.toml");
+        let mut config = Config::default();
+        let args = ConfigSetArgs {
+            workspace: Some("/tmp/workspace".to_string()),
+        };
+
+        let message = apply_config_changes(&mut config, args);
+        config.save_to_path(&config_path).unwrap();
+
+        assert_eq!(message, "ワークスペースのパスを変更しました。: /tmp/workspace\n");
+        let saved = Config::load_from_path(&config_path).unwrap();
+        assert_eq!(saved.workspace, Some(PathBuf::from("/tmp/workspace")));
+    }
+
+    #[test]
+    /// initコマンドの振る舞いとして、デフォルト設定が保存されることを確認する。
+    fn init_command_saves_the_default_config() {
+        let temp_dir = tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.toml");
+
+        Config::default().save_to_path(&config_path).unwrap();
+
+        let saved = Config::load_from_path(&config_path).unwrap();
+        assert_eq!(saved, Config::default());
     }
 }
