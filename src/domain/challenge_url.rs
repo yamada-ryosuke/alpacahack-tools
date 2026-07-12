@@ -3,24 +3,21 @@ use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use crate::prelude::*;
 
-/// AlpacaHackのURLであることが保証されたURL。
+/// 問題ページのURLであることが保証されたURL。
 /// クエリパラメータやフラグメントが取り除かれて正規化されている。
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
-pub struct AlpacaHackUrl {
-    /// URL
-    url: Url,
-}
+pub struct ChallengeUrl(Url);
 
-/// `AlpacaHackUrl`に対して.as_str()などのUrlのメソッドを直接使えるようにする。
-impl Deref for AlpacaHackUrl {
+/// `ChallengeUrl`に対して.as_str()などのUrlのメソッドを直接使えるようにする。
+impl Deref for ChallengeUrl {
     type Target = Url;
 
     fn deref(&self) -> &Self::Target {
-        &self.url
+        &self.0
     }
 }
 
-impl AlpacaHackUrl {
+impl ChallengeUrl {
     /// URLが正しいことを確かめて、正規化されたURLを返す。
     /// 具体的には以下のことをする。
     /// * URLがURLとしてパースできることを確認する。
@@ -31,7 +28,7 @@ impl AlpacaHackUrl {
         let mut url = Self::validate_url(url)?;
         Self::normalize_url(&mut url);
 
-        Ok(Self { url })
+        Ok(Self(url))
     }
 
     /// URLからプロジェクト名に使うkebab-caseの問題タイトルを取得する。
@@ -117,20 +114,20 @@ mod tests {
     #[test]
     fn test_project_name_valid_url() {
         let url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/secret-table").unwrap();
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/secret-table").unwrap();
         let project_name = url.project_name();
         assert_eq!(project_name, "secret-table");
     }
 
     #[test]
     fn test_project_name_with_numbers() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/small-e").unwrap();
+        let url = ChallengeUrl::new("https://alpacahack.com/daily/challenges/small-e").unwrap();
         assert_eq!(url.project_name(), "small-e");
     }
 
     #[test]
     fn test_project_name_single_word() {
-        let url = AlpacaHackUrl::new(
+        let url = ChallengeUrl::new(
             "https://alpacahack.com/daily/challenges/message-for-you?month=2026-04",
         )
         .unwrap();
@@ -140,14 +137,14 @@ mod tests {
     // ==================== new() の正常系テスト ====================
     #[test]
     fn test_new_valid_url() {
-        let result = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/vm1");
+        let result = ChallengeUrl::new("https://alpacahack.com/daily/challenges/vm1");
         assert!(result.is_ok());
     }
 
     /// クエリパラメータとフラグメントが削除されることを確認するテスト
     #[test]
     fn test_new_normalizes_query_and_fragment() {
-        let url = AlpacaHackUrl::new(
+        let url = ChallengeUrl::new(
             "https://alpacahack.com/daily/challenges/alpaca-rangers-2?month=2026-05#section",
         )
         .unwrap();
@@ -165,7 +162,7 @@ mod tests {
     #[test]
     fn test_new_normalizes_query_only() {
         let url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/small-n?month=2026-05&b=2")
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/small-n?month=2026-05&b=2")
                 .unwrap();
         assert_eq!(url.query(), None);
     }
@@ -174,14 +171,14 @@ mod tests {
     #[test]
     fn test_new_normalizes_fragment_only() {
         let url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/func-array#top").unwrap();
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/func-array#top").unwrap();
         assert_eq!(url.fragment(), None);
     }
 
     // ==================== scheme のバリデーションテスト ====================
     #[test]
     fn test_new_rejects_http_scheme() {
-        let result = AlpacaHackUrl::new("http://alpacahack.com/daily/challenges/alpaca-plus-plus");
+        let result = ChallengeUrl::new("http://alpacahack.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
         assert!(
             result
@@ -193,14 +190,14 @@ mod tests {
 
     #[test]
     fn test_new_rejects_ftp_scheme() {
-        let result = AlpacaHackUrl::new("ftp://alpacahack.com/daily/challenges/alpaca-plus-plus");
+        let result = ChallengeUrl::new("ftp://alpacahack.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
     }
 
     // ==================== domain のバリデーションテスト ====================
     #[test]
     fn test_new_rejects_wrong_domain() {
-        let result = AlpacaHackUrl::new("https://example.com/daily/challenges/alpaca-plus-plus");
+        let result = ChallengeUrl::new("https://example.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
         assert!(
             result
@@ -213,14 +210,14 @@ mod tests {
     #[test]
     fn test_new_rejects_subdomain() {
         let result =
-            AlpacaHackUrl::new("https://api.alpacahack.com/daily/challenges/alpaca-plus-plus");
+            ChallengeUrl::new("https://api.alpacahack.com/daily/challenges/alpaca-plus-plus");
         assert!(result.is_err());
     }
 
     // ==================== path のバリデーションテスト ====================
     #[test]
     fn test_new_rejects_wrong_path_structure() {
-        let result = AlpacaHackUrl::new("https://alpacahack.com/challenges/test");
+        let result = ChallengeUrl::new("https://alpacahack.com/challenges/test");
         assert!(result.is_err());
         assert!(
             result
@@ -232,28 +229,28 @@ mod tests {
 
     #[test]
     fn test_new_rejects_missing_challenge_name() {
-        let result = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/");
+        let result = ChallengeUrl::new("https://alpacahack.com/daily/challenges/");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_new_rejects_path_with_trailing_slash() {
         let result =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/");
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_new_rejects_extra_path_segments() {
         let result =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/extra");
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/extra");
         assert!(result.is_err());
     }
 
     // ==================== Deref トレイトのテスト ====================
     #[test]
     fn test_deref_url_methods() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
+        let url = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
 
         // Derefを通じてUrl のメソッドが使えることを確認
         assert_eq!(url.scheme(), "https");
@@ -263,28 +260,28 @@ mod tests {
 
     #[test]
     fn test_deref_as_str() {
-        let url = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
+        let url = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
         assert_eq!(url.as_str(), "https://alpacahack.com/daily/challenges/test");
     }
 
     // ==================== EquaityとCloneのテスト ====================
     #[test]
     fn test_equality() {
-        let url1 = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
-        let url2 = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
+        let url1 = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
+        let url2 = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
         assert_eq!(url1, url2);
     }
 
     #[test]
     fn test_inequality() {
-        let url1 = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test1").unwrap();
-        let url2 = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test2").unwrap();
+        let url1 = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test1").unwrap();
+        let url2 = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test2").unwrap();
         assert_ne!(url1, url2);
     }
 
     #[test]
     fn test_clone() {
-        let url1 = AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
+        let url1 = ChallengeUrl::new("https://alpacahack.com/daily/challenges/test").unwrap();
         let url2 = url1.clone();
         assert_eq!(url1, url2);
         assert_eq!(url1.project_name(), url2.project_name());
@@ -293,7 +290,7 @@ mod tests {
     // ==================== 無効なURL形式のテスト ====================
     #[test]
     fn test_new_rejects_invalid_url_format() {
-        let result = AlpacaHackUrl::new("not a url");
+        let result = ChallengeUrl::new("not a url");
         assert!(result.is_err());
         assert!(
             result
@@ -305,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_new_rejects_empty_string() {
-        let result = AlpacaHackUrl::new("");
+        let result = ChallengeUrl::new("");
         assert!(result.is_err());
     }
 }

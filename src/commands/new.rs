@@ -1,6 +1,3 @@
-/// 問題ページから問題の情報を取得する機能のモジュール
-mod fetch;
-
 use std::{
     io::{self, Write},
     process,
@@ -53,12 +50,12 @@ fn get_workspace(config: &Config) -> Result<Workspace> {
 
 /// コマンドライン引数から問題のURLを取得する。
 /// コマンドライン引数で指定されていない場合は対話的に入力してもらう。
-fn get_challenge_url(args: &NewArgs) -> Result<AlpacaHackUrl> {
+fn get_challenge_url(args: &NewArgs) -> Result<ChallengeUrl> {
     let url = match &args.url {
         Some(url) => url.to_string(),
         None => input_url().context("入出力に失敗しました。").unwrap(),
     };
-    AlpacaHackUrl::new(url.trim()).context("不正なURLです。")
+    ChallengeUrl::new(url.trim()).context("不正なURLです。")
 }
 
 /// 問題ページのURLを入力してもらう。
@@ -89,9 +86,9 @@ fn input_url() -> Result<String> {
 ///
 /// # 返り値
 /// 作成した問題プロジェクトのディレクトリパス。
-fn setup_challenge_project(challenge_url: &AlpacaHackUrl, workspace: &Workspace) -> Result<Project> {
+fn setup_challenge_project(challenge_url: &ChallengeUrl, workspace: &Workspace) -> Result<Project> {
     // 問題情報を取得する。
-    let challenge_info = fetch::fetch_challenge_data(challenge_url)?;
+    let challenge_info = challenge_page::fetch(challenge_url)?;
     println!("問題情報を取得しました");
     println!("問題タイトル: {}", challenge_info.meta.title);
 
@@ -167,7 +164,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_emojify_matching() {
         let challenge_url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/emojify").unwrap();
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/emojify").unwrap();
 
         let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
@@ -239,7 +236,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_a_fact_of_ctf_mismatch() {
         let challenge_url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/a-fact-of-ctf").unwrap();
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/a-fact-of-ctf").unwrap();
 
         let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
@@ -283,7 +280,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_non_tar_file() {
         let challenge_url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/read-assembly").unwrap();
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/read-assembly").unwrap();
 
         let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 
@@ -324,7 +321,7 @@ mod daily_alpacahack_test {
     #[test]
     fn test_no_file() {
         let challenge_url =
-            AlpacaHackUrl::new("https://alpacahack.com/daily/challenges/alpacahack-2100").unwrap();
+            ChallengeUrl::new("https://alpacahack.com/daily/challenges/alpacahack-2100").unwrap();
 
         let workspace = Workspace::new(tempdir().unwrap().path()).unwrap();
 

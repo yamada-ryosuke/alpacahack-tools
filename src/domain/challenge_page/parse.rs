@@ -4,7 +4,13 @@ use scraper::Html;
 
 use crate::prelude::*;
 
-/// 問題ページを解析して、必要なデータを抽出する。
+/// 問題ページから抽出できるデータ。
+pub struct ParsedPage {
+    pub meta: ChallengeMeta,
+    pub attachment_url: Option<Url>,
+}
+
+/// 問題ページからデータを抽出する。
 ///
 /// # 引数
 /// - challenge_url: 元の問題ページのURL
@@ -12,28 +18,25 @@ use crate::prelude::*;
 ///
 /// # 返り値
 /// 返り値は ChallengeMeta とオプションのファイルURL。
-pub fn analyze_document(
-    challenge_url: &AlpacaHackUrl,
-    document: &str,
-) -> Result<(ChallengeMeta, Option<Url>)> {
+pub fn parse(challenge_url: &ChallengeUrl, document: &str) -> Result<ParsedPage> {
     let document = scraper::Html::parse_document(document);
     // スクレイピングするためにセレクタを作成する際、おそらく動的生成のためセレクタが崩れやすい。
     // そのため、`main > div > h1`程度のアバウトなセレクタを使う。
-    Ok((
-        ChallengeMeta {
+    Ok(ParsedPage {
+        meta: ChallengeMeta {
             url: challenge_url.clone(),
-            released_at: get_date(&document)?,
-            title: get_title(&document)?,
+            released_at: extract_date(&document)?,
+            title: extract_title(&document)?,
             project_name: challenge_url.project_name(),
         },
-        get_file_url(&document)?,
-    ))
+        attachment_url: extract_attachment_url(&document)?,
+    })
 }
 
 /// 問題の正式名称を取得する。
 ///
 /// HTML の `main > div > h1` 要素からタイトル文字列を取り出す。
-fn get_title(document: &Html) -> Result<String> {
+fn extract_title(document: &Html) -> Result<String> {
     let title_selector = scraper::Selector::parse("main > div > h1")
         .map_err(|_| anyhow::anyhow!("問題タイトルのセレクタの作成に失敗しました"))?;
 
@@ -50,7 +53,7 @@ fn get_title(document: &Html) -> Result<String> {
 /// ファイルのURLを取得する
 ///
 /// HTML の `main > div > article > div > div > a` から href 属性を解析する。
-fn get_file_url(document: &Html) -> Result<Option<Url>> {
+fn extract_attachment_url(document: &Html) -> Result<Option<Url>> {
     let file_url_selector = scraper::Selector::parse("main > div > article > div > div > a")
         .map_err(|_| anyhow::anyhow!("ファイルのURLのセレクタの作成に失敗しました"))?;
 
@@ -70,7 +73,7 @@ fn get_file_url(document: &Html) -> Result<Option<Url>> {
 /// 問題の日付を取得する
 ///
 /// HTML の `main > div > p` 要素内の最終子要素を日付文字列として扱う。
-fn get_date(document: &Html) -> Result<NaiveDate> {
+fn extract_date(document: &Html) -> Result<NaiveDate> {
     let release_selector = scraper::Selector::parse("main > div > p").unwrap();
 
     let parent = document

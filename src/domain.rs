@@ -1,6 +1,8 @@
-/// AlpacaHackのURLの構造体のあるモジュール
-pub mod alpacahack_url;
-/// 問題の情報を持つための構造体
+/// AlpacaHackの問題ページのURLの構造体のあるモジュール
+pub mod challenge_url;
+/// AlpacaHackの問題ページから問題情報を取得するためのモジュール
+pub mod challenge_page;
+/// 問題の情報を持つための構造体のモジュール
 pub mod challenge_info;
-/// ワークスペースディレクトリ
+/// ワークスペースディレクトリのモジュール
 pub mod workspace;

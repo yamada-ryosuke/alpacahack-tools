@@ -1,5 +1,6 @@
 pub use crate::domain::{
-    alpacahack_url::AlpacaHackUrl,
+    challenge_url::ChallengeUrl,
+    challenge_page,
     challenge_info::{ChallengeFile, ChallengeInfo, ChallengeMeta},
     workspace::{Workspace, Project},
 };

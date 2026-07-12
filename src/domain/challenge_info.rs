@@ -16,7 +16,7 @@ pub struct ChallengeInfo {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ChallengeMeta {
     /// 問題のURL
-    pub url: AlpacaHackUrl,
+    pub url: ChallengeUrl,
     /// 問題が出された日付
     pub released_at: NaiveDate,
     /// スペースを含む(おそらく正式な)問題の名前
