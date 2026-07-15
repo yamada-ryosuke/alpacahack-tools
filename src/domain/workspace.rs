@@ -57,12 +57,12 @@ impl Workspace {
         Daily { path: daily_path }
     }
 
-    /// 名前でプロジェクトを検索する。
+    /// 名前の完全一致でプロジェクトを検索する。
     ///
     /// # 戻り値
     /// 見つかった `Project` を返す。
     fn search_project_by_project_name(&self, project_name: &str) -> Result<Option<Project>> {
-        self.daily().search_project_by_project_name(&project_name)
+        self.daily().search_project_by_project_name(project_name)
     }
 
     /// URLでプロジェクトを検索する。
@@ -160,7 +160,7 @@ impl Daily {
         match match_projects.len() {
             0 => Ok(None),
             1 => Ok(Some(match_projects[0].clone())),
-            other => {
+            _ => {
                 let mut message = "同名のプロジェクトが2つ以上存在します。\n".to_string();
                 for project in &match_projects {
                     message = format!("{}{}\n", &message, project.get_path().display());

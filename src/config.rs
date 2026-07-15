@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::path::Path;
+use std::path::PathBuf;
+
 
 use serde::{Deserialize, Serialize};
 
@@ -20,8 +23,9 @@ impl Config {
 
     /// 指定したパスから設定を取得する。
     /// 設定ファイルが存在しない場合は設定ファイルを作成してから取得する。
-    pub fn load_from_path(path: impl AsRef<Path>) -> Result<Self> {
-        file::load_from_path(path.as_ref())
+    #[cfg(test)]
+    pub fn load_from_path(path: &Path) -> Result<Self> {
+        file::load_from_path(path)
     }
 
     /// 設定を書き込む。
@@ -32,8 +36,9 @@ impl Config {
 
     /// 指定したパスに設定を書き込む。
     /// 設定ファイルが存在しない場合は作成する。
-    pub fn save_to_path(&self, path: impl AsRef<Path>) -> Result<()> {
-        file::save_to_path(self, path.as_ref())
+    #[cfg(test)]
+    pub fn save_to_path(&self, path: &Path) -> Result<()> {
+        file::save_to_path(self, path)
     }
 }
 

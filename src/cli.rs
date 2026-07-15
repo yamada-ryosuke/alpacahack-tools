@@ -13,6 +13,7 @@ pub enum Commands {
     /// プロジェクトディレクトリを作成する。
     New(NewArgs),
     /// プロジェクトディレクトリを開く。
+    // 命名の候補として他にsearchコマンドもありえるが、「開く」という副作用があることを考えるとopenの方がいいかなと思った。
     Open(OpenArgs),
     /// 設定を変更、閲覧する。
     Config(ConfigArgs),

@@ -1,7 +1,7 @@
+use crate::prelude::*;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use crate::prelude::*;
 
 /// 問題ページのURLであることが保証されたURL。
 /// クエリパラメータやフラグメントが取り除かれて正規化されている。
@@ -47,8 +47,28 @@ impl ChallengeUrl {
     fn normalize_url(url: &mut Url) {
         // クエリパラメータを取り除く
         url.set_query(None);
+
         // フラグメントを取り除く
         url.set_fragment(None);
+
+        // 認証情報が付いていたら取り除く
+        let _ = url.set_username("");
+        let _ = url.set_password(None);
+
+        // デフォルトのポート(HTTPSの443)が明示されていたら取り除く
+        let _ = url.set_port(None);
+
+        // ドメインは小文字に正規化する
+        if let Some(host) = url.host_str() {
+            let _ = url.set_host(Some(&host.to_lowercase()));
+        }
+
+        // パスの末尾のスラッシュを取り除く (ただしルート "/" は空にしない)
+        let path = url.path().to_string();
+        if path.len() > 1 && path.ends_with('/') {
+            let new_path = path.trim_end_matches('/');
+            url.set_path(new_path);
+        }
     }
 
     /// URLが https://alpacahack.com/daily/challenges/<something> の形式であることを確かめる
@@ -235,8 +255,7 @@ mod tests {
 
     #[test]
     fn test_new_rejects_path_with_trailing_slash() {
-        let result =
-            ChallengeUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/");
+        let result = ChallengeUrl::new("https://alpacahack.com/daily/challenges/alpaca-plus-plus/");
         assert!(result.is_err());
     }
 
