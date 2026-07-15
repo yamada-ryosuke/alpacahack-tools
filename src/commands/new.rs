@@ -1,9 +1,4 @@
-use std::{
-    io::{self, Write},
-    process,
-};
-
-use crate::{cli::NewArgs, config::Config, prelude::*};
+use crate::{cli::NewArgs, config::Config, editor, prelude::*};
 
 /// 新しい問題プロジェクトを作成してエディタで開くメイン処理。
 ///
@@ -22,7 +17,7 @@ pub fn run(args: NewArgs) {
     // 設定ファイルからワークスペースのパスを取り出す。
     // ワークスペースの設定が存在しない場合はエラー。
     let config = Config::load().expect("設定を取得できませんでした。");
-    let workspace = get_workspace(&config).unwrap();
+    let workspace = Workspace::try_from(&config).unwrap();
 
     // コマンドライン引数から問題のURLを取得する。
     // コマンドライン引数で指定されていない場合は対話的に入力してもらう。
@@ -34,18 +29,10 @@ pub fn run(args: NewArgs) {
     let project = setup_challenge_project(&challenge_url, &workspace).unwrap();
 
     // VSCodeでディレクトリを開く。
-    open_vscode(&project)
+    editor::open_with_vscode(&project)
         .context("VSCodeでディレクトリを開けませんでした。")
         .unwrap();
     println!("VSCodeでディレクトリを開きました。");
-}
-
-/// 設定からワークスペースのパスを取得する。
-/// ワークスペースの設定が存在しない場合はエラー。
-fn get_workspace(config: &Config) -> Result<Workspace> {
-    let path = config.workspace.clone().ok_or(anyhow::anyhow!("ワークスペースのパスが設定されていません。\n`alpacahack-tools config set --workspace <workspace-full-path>`を実行してください。"))?;
-
-    Workspace::new(&path)
 }
 
 /// コマンドライン引数から問題のURLを取得する。
@@ -60,18 +47,9 @@ fn get_challenge_url(args: &NewArgs) -> Result<ChallengeUrl> {
 
 /// 問題ページのURLを入力してもらう。
 fn input_url() -> Result<String> {
-    print!("問題ページのurl> ");
-    io::stdout()
-        .flush()
-        .context("標準出力に失敗しました。")
-        .unwrap();
-
-    let mut url = String::new();
-    io::stdin()
-        .read_line(&mut url)
+    inquire::Text::new("問題ページのURL> ")
+        .prompt()
         .context("URLの入力に失敗しました")
-        .unwrap();
-    Ok(url)
 }
 
 /// 指定した URL から問題データを取得し、作業ディレクトリに問題プロジェクトを作成する。
@@ -97,15 +75,6 @@ fn setup_challenge_project(challenge_url: &ChallengeUrl, workspace: &Workspace) 
     println!("問題プロジェクトの作成が完了しました。");
 
     Ok(project)
-}
-
-/// VSCodeで問題ディレクトリを開く。
-fn open_vscode(project: &Project) -> Result<()> {
-    process::Command::new("code")
-        .arg(project.get_path())
-        .spawn()?
-        .wait()?;
-    Ok(())
 }
 
 #[cfg(test)]

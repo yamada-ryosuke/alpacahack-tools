@@ -12,6 +12,8 @@ pub struct Cli {
 pub enum Commands {
     /// プロジェクトディレクトリを作成する。
     New(NewArgs),
+    /// プロジェクトディレクトリを開く。
+    Open(OpenArgs),
     /// 設定を変更、閲覧する。
     Config(ConfigArgs),
 }
@@ -20,6 +22,14 @@ pub enum Commands {
 #[derive(Args)]
 pub struct NewArgs {
     /// 問題URLを指定する。指定されない場合は対話的に入力することになる。
+    #[arg(long, short)]
+    pub url: Option<String>,
+}
+
+/// `alpacahack-tools open`のコマンドライン引数
+#[derive(Args)]
+pub struct OpenArgs {
+    /// 問題URLでプロジェクトを検索する。
     #[arg(long, short)]
     pub url: Option<String>,
 }
