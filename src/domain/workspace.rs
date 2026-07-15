@@ -10,6 +10,7 @@ use std::{
 /// ワークスペースを表す構造体。
 ///
 /// ワークスペースは、プロジェクトや問題ファイルを格納するためのルートディレクトリを管理する。
+#[derive(Debug, Clone)]
 pub struct Workspace {
     path: PathBuf,
 }
@@ -88,6 +89,7 @@ impl TryFrom<&Config> for Workspace {
 
 /// Daily AlpacaHack のディレクトリ
 /// <workspace>/challenge/daily内のプロジェクトを配置するディレクトリの指定の責務を負う。
+#[derive(Debug, Clone)]
 struct Daily {
     path: PathBuf,
 }
@@ -118,13 +120,13 @@ impl Daily {
             .join(project_name)
     }
 
-    /// 名前でプロジェクトを検索する。
-    ///
-    /// # 戻り値
-    /// 見つかった `Project` を返す。
-    fn search_project_by_project_name(&self, name: &str) -> Result<Option<Project>> {
+    /// daily内のプロジェクトの一覧を返す。
+    fn projects(&self) -> Result<Vec<Project>> {
+        let mut projects = Vec::new();
+
+        // dailyディレクトリが存在しない場合はプロジェクトが存在しないと考える。
         if !self.path.exists() {
-            return Ok(None);
+            return Ok(projects);
         }
 
         for month_dir in fs::read_dir(&self.path)? {
@@ -132,19 +134,40 @@ impl Daily {
             if !month_path.is_dir() {
                 continue;
             }
-            for project in fs::read_dir(&month_path)? {
-                let project_path = project?.path();
-                let filename = project_path
-                    .file_name()
-                    .ok_or(anyhow::anyhow!("プロジェクト名が取得できませんでした。"))?
-                    .to_str()
-                    .ok_or(anyhow::anyhow!("OsStrを&strに変換できませんでした。"))?;
-                if filename == name {
-                    return Ok(Some(Project { path: project_path }));
+            for project_dir in fs::read_dir(&month_path)? {
+                let project_path = project_dir?.path();
+                if !project_path.is_dir() {
+                    continue;
                 }
+                projects.push(Project { path: project_path });
             }
         }
-        Ok(None)
+        Ok(projects)
+    }
+
+    /// 名前でプロジェクトを検索する。
+    ///
+    /// # 戻り値
+    /// 見つかった `Project` を返す。
+    fn search_project_by_project_name(&self, name: &str) -> Result<Option<Project>> {
+        let match_projects: Vec<Project> = self
+            .projects()?
+            .into_iter()
+            .filter(|project| project.name() == name)
+            .collect();
+
+        // 2つ以上同名のプロジェクトがあったらエラー
+        match match_projects.len() {
+            0 => Ok(None),
+            1 => Ok(Some(match_projects[0].clone())),
+            other => {
+                let mut message = "同名のプロジェクトが2つ以上存在します。\n".to_string();
+                for project in &match_projects {
+                    message = format!("{}{}\n", &message, project.get_path().display());
+                }
+                Err(anyhow::anyhow!(message))
+            }
+        }
     }
 }
 
@@ -154,7 +177,7 @@ impl Daily {
 /// challenge.toml、添付ファイルの展開先など）に関する扱いを一手に引き受ける責務を負い、
 /// プロジェクトの初期化や構成に関する操作を提供する。
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Project {
     /// プロジェクトのパス
     path: PathBuf,
